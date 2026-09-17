@@ -21,7 +21,7 @@ _raw_allowed_hosts = os.environ.get("ALLOWED_HOSTS", "").strip()
 if _raw_allowed_hosts:
     ALLOWED_HOSTS = [h.strip() for h in _raw_allowed_hosts.split(",") if h.strip()]
 else:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver", ".vercel.app", "*"]
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver", ".vercel.app", ".onrender.com", "*"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -63,6 +63,14 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "accounts.middleware.AuditLogMiddleware",  # captures request.user/IP for audit logs
 ]
+
+try:
+    import whitenoise  # noqa: F401
+
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+except ImportError:
+    pass
 
 ROOT_URLCONF = "config.urls"
 
