@@ -108,18 +108,34 @@ class RegisterView(generics.CreateAPIView):
         )
 
 
+PublicApplicantRegisterView = RegisterView
+
+
 class AdminProvisionAccountView(APIView):
-    # Provisioning view: creates registration invitations for internal staff accounts.
+    # Provisioning view: creates accounts & registration invitations for internal staff/teachers.
     serializer_class = AdminProvisionAccountSerializer
     permission_classes = [IsAdmin]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "admin_sensitive"
 
     def post(self, request):
+        import secrets
+        import string
+        from services import email_service
+
+        import re
+
         email = request.data.get("email")
         role = request.data.get("role")
         first_name = request.data.get("first_name", "")
         last_name = request.data.get("last_name", "")
+
+        if not email and role and (first_name or last_name):
+            clean_first = re.sub(r"[^a-z0-9]", "", first_name.lower())
+            clean_last = re.sub(r"[^a-z0-9]", "", last_name.lower())
+            base = f"{clean_first}{clean_last}" or "staff"
+            subdomain = "staff" if role in ["teacher", "staff", "admin"] else role
+            email = f"{base}@{subdomain}.riversideacademy.com"
 
         if not email or not role:
             return Response({"detail": "Email and role required."}, status=400)
@@ -132,6 +148,34 @@ class AdminProvisionAccountView(APIView):
                 {"detail": "An invitation for this email already exists."}, status=400
             )
 
+        # Generate or use provided password
+        raw_password = request.data.get("password")
+        if not raw_password:
+            chars = string.ascii_letters + string.digits
+            rand_suffix = "".join(secrets.choice(chars) for _ in range(5))
+            raw_password = f"{role.capitalize()}2026!{rand_suffix}"
+
+        # 1. Create and activate User & Profile immediately
+        user, _ = User.objects.get_or_create(
+            username=email,
+            defaults={
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+                "is_active": True,
+            },
+        )
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
+        user.is_active = True
+        user.set_password(raw_password)
+        user.save()
+
+        user.profile.role = role
+        user.profile.save(update_fields=["role"])
+
+        # 2. Record invitation for tracking
         invitation = RegistrationInvitation.objects.create(
             email=email,
             role=role,
@@ -144,16 +188,15 @@ class AdminProvisionAccountView(APIView):
         frontend_url = getattr(settings, "FRONTEND_URL", "http://127.0.0.1:5173")
         activation_url = f"{frontend_url}/portal?activate_token={invitation.token}"
 
-        try:
-            send_mail(
-                "Activate your Schoolhub Account",
-                f"An administrator has provisioned an account for you. Use this link to activate it and set your password: {activation_url}",
-                settings.DEFAULT_FROM_EMAIL,
-                [invitation.email],
-                fail_silently=False,
-            )
-        except Exception:
-            logger.exception("Failed to send activation email to %s", invitation.email)
+        # 3. Dispatch credentials email
+        email_service.send_credentials_email(
+            email=email,
+            password=raw_password,
+            role=role,
+            name=f"{first_name} {last_name}".strip(),
+            portal_url=f"{frontend_url}/portal",
+            request=request,
+        )
 
         audit.record(
             actor=request.user,
@@ -163,8 +206,16 @@ class AdminProvisionAccountView(APIView):
             request=request,
         )
         return Response(
-            {"detail": "Invitation sent.", "token": invitation.token}, status=201
+            {
+                "detail": f"{role.capitalize()} account created and credentials generated successfully.",
+                "email": email,
+                "password": raw_password,
+                "role": role,
+                "token": invitation.token,
+            },
+            status=201,
         )
+
 
 
 class PasswordResetRequestView(APIView):
@@ -242,7 +293,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         profile = self.request.user.profile
         if profile.role == "admin":
-            return super().get_queryset()
+            qs = super().get_queryset()
+            role = self.request.query_params.get("role")
+            if role:
+                qs = qs.filter(role=role)
+            return qs
         return super().get_queryset().filter(user=self.request.user)
 
     @action(detail=False, methods=["get", "patch"])

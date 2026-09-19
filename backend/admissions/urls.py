@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     AdmissionApplicationAdminViewSet,
     AdmissionApplicationPublicStatusView,
+    AdmissionApplicationReceiptUploadView,
     AdmissionApplicationViewSet,
     ApplicationDocumentListCreateView,
     ParentRelationshipRequestAdminViewSet,
@@ -41,4 +42,10 @@ urlpatterns = [
         AdmissionApplicationPublicStatusView.as_view(),
         name="admission-application-status",
     ),
+    path(
+        "status/<str:reference>/upload-receipt/",
+        AdmissionApplicationReceiptUploadView.as_view(),
+        name="admission-application-receipt-upload",
+    ),
 ] + router.urls
+

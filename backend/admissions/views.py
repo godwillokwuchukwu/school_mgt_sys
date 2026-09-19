@@ -167,130 +167,186 @@ class AdmissionApplicationPublicStatusView(generics.RetrieveAPIView):
     lookup_url_kwarg = "reference"
 
 
+class AdmissionApplicationReceiptUploadView(generics.CreateAPIView):
+    """
+    POST /api/admissions/status/<reference>/upload-receipt/
+    Allows an applicant to upload their payment receipt / bank transfer slip.
+    Publicly accessible with valid application reference.
+    """
+
+    permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, reference):
+        from .models import DocumentType, AdmissionDocument, MAX_DOCUMENT_SIZE_MB
+
+        application = generics.get_object_or_404(
+            AdmissionApplication.objects.all(), reference=reference
+        )
+
+        uploaded_file = request.FILES.get("file")
+        if not uploaded_file:
+            return Response(
+                {"detail": "No file uploaded. Please select your payment receipt or transfer slip."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if uploaded_file.size > MAX_DOCUMENT_SIZE_MB * 1024 * 1024:
+            return Response(
+                {"detail": f"File must be smaller than {MAX_DOCUMENT_SIZE_MB}MB."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        doc = AdmissionDocument.objects.create(
+            application=application,
+            document_type=DocumentType.PAYMENT_RECEIPT,
+            file=uploaded_file,
+        )
+
+        try:
+            from services import notification_service
+            from accounts.models import AdminNotificationType
+
+            notification_service.notify_admin(
+                title=f"Payment Receipt Uploaded: {application.reference}",
+                message=f"Payment receipt uploaded for {application.student_first_name} {application.student_last_name}. Please verify payment.",
+                notification_type=AdminNotificationType.DOCUMENT_UPLOADED,
+                object_instance=application,
+            )
+        except Exception:
+            pass
+
+        return Response(
+            {
+                "detail": "Payment receipt uploaded successfully.",
+                "id": doc.id,
+                "file": doc.file.url if hasattr(doc.file, "url") else str(doc.file),
+                "uploaded_at": doc.uploaded_at,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+
 class AdmissionApplicationAdminViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
 
     @action(detail=True, methods=["post"])
-    def provision(self, request, pk=None):
-        from django.contrib.auth import get_user_model
-        from django.conf import settings
-        from accounts.models import Profile, RegistrationInvitation
-        from students.models import Student
+    def approve(self, request, pk=None):
+        from services import admission_service
 
         application = self.get_object()
-        if application.status != ApplicationStatus.APPROVED:
-            return Response(
-                {"detail": "Application must be APPROVED before provisioning."},
-                status=400,
-            )
+        amount = float(request.data.get("amount", 150000.0))
+        due_date = request.data.get("due_date", None)
+        notes = request.data.get("notes", "")
 
-        with transaction.atomic():
-            student_email = (
-                application.student_email
-                or f"{application.reference.lower()}@student.local"
-            )
-            student_user, created = get_user_model().objects.get_or_create(
-                username=student_email,
-                defaults={
-                    "email": student_email,
-                    "first_name": application.student_first_name,
-                    "last_name": application.student_last_name,
-                    "is_active": False,
-                },
-            )
+        updated = admission_service.move_to_payment(
+            application=application,
+            admin_user=request.user,
+            amount=amount,
+            due_date=due_date,
+            notes=notes,
+            request=request,
+        )
+        return Response(AdmissionApplicationDetailSerializer(updated).data)
 
-            if created:
-                student_user.set_unusable_password()
-                student_user.save()
-                student_profile = student_user.profile
-                student_profile.role = "student"
-                student_profile.save(update_fields=["role"])
-            else:
-                student_profile = student_user.profile
+    @action(detail=True, methods=["post"])
+    def decline(self, request, pk=None):
+        from services import admission_service
 
-            student, student_created = Student.objects.get_or_create(
-                profile=student_profile,
-                defaults={
-                    "admission_number": application.reference,
-                    "dob": application.student_dob,
-                },
-            )
+        application = self.get_object()
+        notes = request.data.get("notes", "")
 
-            parent_email = application.guardian_email
-            parent_user, p_created = get_user_model().objects.get_or_create(
-                username=parent_email,
-                defaults={
-                    "email": parent_email,
-                    "first_name": application.guardian_full_name.split()[0],
-                    "last_name": (
-                        " ".join(application.guardian_full_name.split()[1:])
-                        if len(application.guardian_full_name.split()) > 1
-                        else ""
-                    ),
-                    "is_active": False,
-                },
-            )
+        updated = admission_service.reject_application(
+            application=application,
+            admin_user=request.user,
+            notes=notes,
+            request=request,
+        )
+        return Response(AdmissionApplicationDetailSerializer(updated).data)
 
-            if p_created:
-                parent_user.set_unusable_password()
-                parent_user.save()
-                parent_profile = parent_user.profile
-                parent_profile.role = "parent"
-                parent_profile.save(update_fields=["role"])
-            else:
-                parent_profile = parent_user.profile
+    @action(detail=True, methods=["post"])
+    def confirm_payment(self, request, pk=None):
+        from services import admission_service
 
-            student.parents.add(parent_profile)
+        application = self.get_object()
+        notes = request.data.get("notes", "")
 
-            # Use existing or create new invitations
-            student_inv = RegistrationInvitation.objects.filter(
-                email=student_user.email
-            ).first()
-            if not student_inv:
-                student_inv = RegistrationInvitation.objects.create(
-                    email=student_user.email,
-                    role="student",
-                    token=RegistrationInvitation.generate_token(),
-                    first_name=student_user.first_name,
-                    last_name=student_user.last_name,
-                    created_by=request.user,
-                )
+        updated = admission_service.confirm_payment(
+            application=application,
+            admin_user=request.user,
+            notes=notes,
+            request=request,
+        )
+        return Response(AdmissionApplicationDetailSerializer(updated).data)
 
-            parent_inv = RegistrationInvitation.objects.filter(
-                email=parent_user.email
-            ).first()
-            if not parent_inv:
-                parent_inv = RegistrationInvitation.objects.create(
-                    email=parent_user.email,
-                    role="parent",
-                    token=RegistrationInvitation.generate_token(),
-                    first_name=parent_user.first_name,
-                    last_name=parent_user.last_name,
-                    created_by=request.user,
-                )
+    @action(detail=True, methods=["post"])
+    def offer_admission(self, request, pk=None):
+        from services import admission_service
 
-            frontend_url = getattr(settings, "FRONTEND_URL", "http://127.0.0.1:5173")
-            try:
-                from django.core.mail import send_mail
+        application = self.get_object()
+        notes = request.data.get("notes", "")
 
-                send_mail(
-                    "Activate your Schoolhub Parent Account",
-                    f"An administrator has provisioned a parent account for you. Use this link to activate it and set your password: {frontend_url}/portal?activate_token={parent_inv.token}",
-                    settings.DEFAULT_FROM_EMAIL,
-                    [parent_inv.email],
-                )
-            except Exception:
-                pass
+        updated = admission_service.offer_admission(
+            application=application,
+            admin_user=request.user,
+            notes=notes,
+            request=request,
+        )
+        return Response(AdmissionApplicationDetailSerializer(updated).data)
 
-            audit.record(
-                actor=request.user,
-                action="admission_application.provisioned",
-                instance=application,
-                request=request,
-            )
+    @action(detail=True, methods=["post"])
+    def enroll(self, request, pk=None):
+        import secrets
+        import string
+        from services import admission_service
 
-        return Response({"detail": "Student and Parent provisioned successfully."})
+        application = self.get_object()
+
+        def gen_pwd(prefix="Riverside"):
+            chars = string.ascii_letters + string.digits
+            rand = "".join(secrets.choice(chars) for _ in range(5))
+            return f"{prefix}2026!{rand}"
+
+        import re
+
+        names = (application.guardian_full_name or "").strip().split()
+        guardian_first = names[0].lower() if names else "parent"
+        guardian_last = "".join(names[1:]).lower() if len(names) > 1 else ""
+        guardian_clean = re.sub(r"[^a-z0-9]", "", f"{guardian_first}{guardian_last}") or "parent"
+
+        student_clean = re.sub(
+            r"[^a-z0-9]",
+            "",
+            f"{(application.student_first_name or '').lower()}{(application.student_last_name or '').lower()}",
+        ) or application.reference.lower().replace("-", "")
+
+        default_student_email = f"{student_clean}@student.riversideacademy.com"
+        default_parent_email = f"{guardian_clean}@parent.riversideacademy.com"
+
+        student_email = request.data.get("student_email") or default_student_email
+        student_password = request.data.get("student_password") or gen_pwd("Student")
+
+        parent_email = request.data.get("parent_email") or default_parent_email
+        parent_password = request.data.get("parent_password") or gen_pwd("Parent")
+        notes = request.data.get("notes", "")
+
+        result = admission_service.enroll_and_provision(
+            application=application,
+            admin_user=request.user,
+            student_email=student_email,
+            student_password=student_password,
+            parent_email=parent_email,
+            parent_password=parent_password,
+            notes=notes,
+            request=request,
+        )
+        return Response(result, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"])
+    def provision(self, request, pk=None):
+        return self.enroll(request, pk)
 
     permission_classes = [IsAdmin]
     queryset = AdmissionApplication.objects.exclude(

@@ -16,6 +16,8 @@ from .models import (
 
 class SchoolProfileSerializer(serializers.ModelSerializer):
     years_of_excellence = serializers.ReadOnlyField()
+    total_students = serializers.SerializerMethodField()
+    total_teachers = serializers.SerializerMethodField()
 
     class Meta:
         model = SchoolProfile
@@ -44,6 +46,14 @@ class SchoolProfileSerializer(serializers.ModelSerializer):
             "instagram_url",
             "linkedin_url",
         ]
+
+    def get_total_students(self, obj):
+        from students.models import Student
+        return Student.objects.count()
+
+    def get_total_teachers(self, obj):
+        from accounts.models import Profile, Role
+        return Profile.objects.filter(role=Role.TEACHER).count()
 
 
 class NewsArticleListSerializer(serializers.ModelSerializer):

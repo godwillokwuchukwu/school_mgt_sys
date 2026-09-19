@@ -148,6 +148,15 @@ const api = {
   adminSuspendProfile: (id) => request(`/accounts/profiles/${id}/suspend/`, { method: 'POST' }),
   adminReactivateProfile: (id) => request(`/accounts/profiles/${id}/reactivate/`, { method: 'POST' }),
 
+  // Admissions Admin
+  admissionsApplications: () => request('/admissions/admin/applications/'),
+  admissionsApplicationDetail: (id) => request(`/admissions/admin/applications/${id}/`),
+  admissionsApprove: (id, amount) => request(`/admissions/admin/applications/${id}/approve/`, { method: 'POST', body: JSON.stringify({ amount }) }),
+  admissionsDecline: (id, notes) => request(`/admissions/admin/applications/${id}/decline/`, { method: 'POST', body: JSON.stringify({ notes }) }),
+  admissionsConfirmPayment: (id, notes) => request(`/admissions/admin/applications/${id}/confirm_payment/`, { method: 'POST', body: JSON.stringify({ notes }) }),
+  admissionsOfferAdmission: (id, notes) => request(`/admissions/admin/applications/${id}/offer_admission/`, { method: 'POST', body: JSON.stringify({ notes }) }),
+  admissionsEnroll: (id, data) => request(`/admissions/admin/applications/${id}/enroll/`, { method: 'POST', body: JSON.stringify(data) }),
+
   deleteStudent: (id) => request(`/students/students/${id}/`, { method: 'DELETE' }),
   async dashboard() {
     const results = await Promise.allSettled([

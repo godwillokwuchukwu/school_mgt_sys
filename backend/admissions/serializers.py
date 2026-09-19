@@ -6,6 +6,7 @@ from .models import (
     AdmissionApplication,
     AdmissionDocument,
     ApplicationStatus,
+    DocumentType,
     ParentRelationshipRequest,
     ParentRelationshipStatus,
 )
@@ -99,6 +100,7 @@ class AdmissionApplicationDetailSerializer(serializers.ModelSerializer):
 
 class AdmissionApplicationAdminListSerializer(serializers.ModelSerializer):
     applicant_email = serializers.EmailField(source="applicant.email", read_only=True)
+    has_payment_receipt = serializers.SerializerMethodField()
 
     class Meta:
         model = AdmissionApplication
@@ -111,9 +113,14 @@ class AdmissionApplicationAdminListSerializer(serializers.ModelSerializer):
             "student_last_name",
             "class_applying_for",
             "academic_session",
+            "has_payment_receipt",
             "submitted_at",
             "created_at",
         ]
+
+    def get_has_payment_receipt(self, obj):
+        return obj.documents.filter(document_type=DocumentType.PAYMENT_RECEIPT).exists()
+
 
 
 class AdmissionApplicationPublicStatusSerializer(serializers.ModelSerializer):
@@ -122,6 +129,7 @@ class AdmissionApplicationPublicStatusSerializer(serializers.ModelSerializer):
     student's name -- same principle as public_site.AdmissionEnquiryStatusSerializer."""
 
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    payment_receipt = serializers.SerializerMethodField()
 
     class Meta:
         model = AdmissionApplication
@@ -132,8 +140,29 @@ class AdmissionApplicationPublicStatusSerializer(serializers.ModelSerializer):
             "student_first_name",
             "student_last_name",
             "class_applying_for",
+            "academic_session",
+            "payment_receipt",
             "submitted_at",
         ]
+
+    def get_payment_receipt(self, obj):
+        receipt = (
+            obj.documents.filter(document_type=DocumentType.PAYMENT_RECEIPT)
+            .order_by("-uploaded_at")
+            .first()
+        )
+        if receipt and receipt.file:
+            return {
+                "id": receipt.id,
+                "file": (
+                    receipt.file.url
+                    if hasattr(receipt.file, "url")
+                    else str(receipt.file)
+                ),
+                "uploaded_at": receipt.uploaded_at,
+            }
+        return None
+
 
 
 class AdmissionApplicationDecisionSerializer(serializers.Serializer):

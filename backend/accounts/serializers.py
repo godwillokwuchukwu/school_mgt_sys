@@ -26,6 +26,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     teaching_subjects = serializers.PrimaryKeyRelatedField(
         queryset=Subject.objects.all(), many=True, required=False
     )
+    is_active = serializers.BooleanField(source="user.is_active", read_only=True)
 
     class Meta:
         model = Profile
@@ -34,6 +35,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
+            "is_active",
             "role",
             "phone",
             "address",
@@ -252,6 +254,11 @@ class AdminProvisionAccountSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=Role.choices)
     first_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
     last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+
+
+class AccountActivationSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    password = serializers.CharField(write_only=True)
 
 
 class RoleAwareTokenObtainPairSerializer(TokenObtainPairSerializer):

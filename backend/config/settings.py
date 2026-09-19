@@ -184,21 +184,32 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 100,
     "DEFAULT_THROTTLE_CLASSES": (
         []
-        if TESTING
+        if (TESTING or DEBUG)
         else [
             "rest_framework.throttling.AnonRateThrottle",
             "rest_framework.throttling.UserRateThrottle",
         ]
     ),
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "100000/day" if TESTING else "100/day",
-        "user": "100000/day" if TESTING else "1000/day",
-        "auth": "100000/minute" if TESTING else "5/minute",
-        "public_write": "100000/hour" if TESTING else "10/hour",
-        "register": "100000/hour" if TESTING else "10/hour",
-        "admin_sensitive": "100000/day" if TESTING else "100/day",
+        "anon": "100000/day" if (TESTING or DEBUG) else "100/day",
+        "user": "100000/day" if (TESTING or DEBUG) else "1000/day",
+        "auth": "100000/minute" if (TESTING or DEBUG) else "5/minute",
+        "public_write": "100000/hour" if (TESTING or DEBUG) else "10/hour",
+        "register": "100000/hour" if (TESTING or DEBUG) else "10/hour",
+        "admin_sensitive": "100000/day" if (TESTING or DEBUG) else "100/day",
     },
 }
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
 
 CACHES = (
     {
@@ -226,7 +237,13 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 
-# --- Email (used by Celery reminder tasks) ---
+# --- Email ---
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "").strip() or "localhost"
 _raw_email_port = os.environ.get("EMAIL_PORT", "").strip()
 EMAIL_PORT = int(_raw_email_port) if _raw_email_port.isdigit() else 25
@@ -234,8 +251,9 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip()
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "").strip()
 _email_tls_str = os.environ.get("EMAIL_USE_TLS", "").strip().lower()
 EMAIL_USE_TLS = False if _email_tls_str in ("false", "0", "no") else True
+EMAIL_TIMEOUT = 5
 DEFAULT_FROM_EMAIL = (
-    os.environ.get("DEFAULT_FROM_EMAIL", "").strip() or "no-reply@school.example.com"
+    os.environ.get("DEFAULT_FROM_EMAIL", "").strip() or "noreply@riversideacademy.edu"
 )
 
 # --- File upload limits (assignments: max 10MB) ---

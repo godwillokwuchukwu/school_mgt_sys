@@ -184,6 +184,7 @@ class DocumentType(models.TextChoices):
     PASSPORT_PHOTO = "passport_photo", "Passport Photograph"
     IDENTIFICATION = "identification", "Identification Document"
     MEDICAL = "medical", "Medical Document"
+    PAYMENT_RECEIPT = "payment_receipt", "Payment Receipt / Bank Slip"
     OTHER = "other", "Other Supporting Document"
 
 

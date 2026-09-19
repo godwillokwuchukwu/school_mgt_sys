@@ -164,6 +164,7 @@ export const publicApi = {
   uploadApplicationDocument: (id, formData) => request(`/admissions/applications/${id}/documents/`, { method: 'POST', body: formData }),
   applicationDocuments: (id) => request(`/admissions/applications/${id}/documents/`).then(list),
   applicationStatus: (reference) => request(`/admissions/status/${encodeURIComponent(reference)}/`, {}, false),
+  uploadPaymentReceipt: (reference, formData) => request(`/admissions/status/${encodeURIComponent(reference)}/upload-receipt/`, { method: 'POST', body: formData }, false),
   jobApplicationStatus: (reference) => request(`/public/careers/applications/${encodeURIComponent(reference)}/`, {}, false),
 
   // --- Parent/guardian relationship request (Section 2.6/23) ---
