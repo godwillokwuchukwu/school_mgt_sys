@@ -23,6 +23,13 @@ import Terms from './pages/Terms'
 export default function PublicApp() {
   return (
     <Routes>
+      {/* Standalone full-screen student registration & login portal */}
+      <Route path="login" element={<StudentAuth />} />
+      <Route path="register" element={<StudentAuth />} />
+      <Route path="student/auth" element={<StudentAuth />} />
+      <Route path="student/login" element={<StudentAuth />} />
+      <Route path="student/register" element={<StudentAuth />} />
+
       <Route element={<PublicLayout />}>
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />
@@ -30,12 +37,9 @@ export default function PublicApp() {
         <Route path="programs" element={<Programs />} />
         <Route path="admissions" element={<Admissions />} />
         <Route path="admissions/apply" element={<AdmissionsApply />} />
+        <Route path="admissions/register" element={<AdmissionsApply defaultMode="register" />} />
+        <Route path="admissions/login" element={<AdmissionsApply defaultMode="login" />} />
         <Route path="admissions/status" element={<AdmissionsStatus />} />
-        <Route path="login" element={<StudentAuth />} />
-        <Route path="register" element={<StudentAuth />} />
-        <Route path="student/auth" element={<StudentAuth />} />
-        <Route path="student/login" element={<StudentAuth />} />
-        <Route path="student/register" element={<StudentAuth />} />
         <Route path="register/parent" element={<ParentRegister />} />
         <Route path="parent/register" element={<ParentRegister />} />
         <Route path="parents/register" element={<ParentRegister />} />

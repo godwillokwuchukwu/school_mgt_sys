@@ -21,8 +21,10 @@ const DOCUMENT_TYPES = [
   ['other', 'Other Supporting Document'],
 ]
 
-function ApplicantAuth({ onSignedIn }) {
-  // Login State
+function ApplicantAuth({ onSignedIn, defaultMode = 'register' }) {
+  const [activeMode, setActiveMode] = useState(defaultMode) // 'register' | 'login' | 'forgot'
+
+  // --- Login State ---
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
   const [showLoginPassword, setShowLoginPassword] = useState(false)
@@ -30,12 +32,14 @@ function ApplicantAuth({ onSignedIn }) {
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError, setLoginError] = useState('')
 
-  // Register State
+  // --- Register State ---
   const [regForm, setRegForm] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
+    dob: '',
+    matricNo: '',
     password: '',
     confirmPassword: '',
     agreeTerms: false,
@@ -45,22 +49,45 @@ function ApplicantAuth({ onSignedIn }) {
   const [regLoading, setRegLoading] = useState(false)
   const [regError, setRegError] = useState('')
 
-  // Password Strength Calculation (matches StudentAuth)
-  const calculateStrength = (pass) => {
-    if (!pass) return { score: 0, label: '', color: '' }
-    let score = 0
-    if (pass.length >= 10) score += 1
-    if (/[A-Z]/.test(pass)) score += 1
-    if (/[a-z]/.test(pass)) score += 1
-    if (/[0-9]/.test(pass)) score += 1
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1
+  // --- Forgot Password State ---
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotError, setForgotError] = useState('')
 
-    if (score <= 2) return { score: 1, label: 'Weak', color: '#dc2626' }
-    if (score <= 4) return { score: 2, label: 'Medium', color: '#d97706' }
-    return { score: 3, label: 'Strong', color: '#16a34a' }
+  // --- Password Strength & Checklist ---
+  const hasLength = regForm.password.length >= 10
+  const hasUpper = /[A-Z]/.test(regForm.password)
+  const hasLower = /[a-z]/.test(regForm.password)
+  const hasNumber = /[0-9]/.test(regForm.password)
+  const hasSpecial = /[^A-Za-z0-9]/.test(regForm.password)
+
+  const metCount = [hasLength, hasUpper, hasLower, hasNumber, hasSpecial].filter(Boolean).length
+
+  let strengthBars = 0
+  let strengthLabel = ''
+  let strengthColor = ''
+
+  if (regForm.password) {
+    if (metCount <= 2) {
+      strengthBars = 1
+      strengthLabel = 'Weak'
+      strengthColor = '#B42318'
+    } else if (metCount === 3) {
+      strengthBars = 2
+      strengthLabel = 'Fair'
+      strengthColor = '#D97706'
+    } else if (metCount === 4) {
+      strengthBars = 3
+      strengthLabel = 'Good'
+      strengthColor = '#2563EB'
+    } else {
+      strengthBars = 4
+      strengthLabel = 'Strong'
+      strengthColor = '#18794E'
+    }
   }
 
-  const passwordStrength = calculateStrength(regForm.password)
   const passwordsMatch = regForm.confirmPassword && regForm.password === regForm.confirmPassword
   const passwordsMismatch = regForm.confirmPassword && regForm.password !== regForm.confirmPassword
 
@@ -68,376 +95,698 @@ function ApplicantAuth({ onSignedIn }) {
     setRegForm((prev) => ({ ...prev, [field]: value }))
   }
 
+  // --- Submit Login ---
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoginError('')
     setLoginLoading(true)
     try {
-      await publicApi.login(loginEmail, loginPassword)
+      await publicApi.login(loginEmail.trim(), loginPassword)
       onSignedIn()
     } catch (err) {
-      setLoginError(err.message || 'Authentication failed. Please check your credentials.')
+      setLoginError(err.message || 'Authentication failed. Please check your credentials and try again.')
     } finally {
       setLoginLoading(false)
     }
   }
 
+  // --- Submit Register ---
   const handleRegister = async (e) => {
     e.preventDefault()
     setRegError('')
+
+    if (regForm.password.length < 10) {
+      setRegError('Password must be at least 10 characters long.')
+      return
+    }
     if (regForm.password !== regForm.confirmPassword) {
       setRegError('Passwords do not match.')
       return
     }
     if (!regForm.agreeTerms) {
-      setRegError('You must accept the terms and conditions.')
+      setRegError('You must agree to the Terms of Service and Privacy Policy to register.')
       return
     }
+
     setRegLoading(true)
     try {
-      await publicApi.register({
-        first_name: regForm.firstName,
-        last_name: regForm.lastName,
-        email: regForm.email,
-        phone: regForm.phone,
+      await publicApi.studentRegister({
+        first_name: regForm.firstName.trim(),
+        last_name: regForm.lastName.trim(),
+        email: regForm.email.trim(),
+        phone: regForm.phone.trim(),
+        dob: regForm.dob || '2008-01-01',
+        student_id: regForm.matricNo ? regForm.matricNo.trim() : undefined,
         password: regForm.password,
+        confirm_password: regForm.confirmPassword,
+        agree_terms: regForm.agreeTerms,
       })
-      await publicApi.login(regForm.email, regForm.password)
-      onSignedIn()
+      await publicApi.login(regForm.email.trim(), regForm.password)
+      onSignedIn({
+        student_first_name: regForm.firstName.trim(),
+        student_last_name: regForm.lastName.trim(),
+        student_email: regForm.email.trim(),
+        student_phone: regForm.phone.trim(),
+        student_dob: regForm.dob,
+      })
     } catch (err) {
-      setRegError(err.message || 'Registration failed. Please try again.')
+      setRegError(err.message || 'Registration failed. Please review your details and try again.')
     } finally {
       setRegLoading(false)
     }
   }
 
+  // --- Submit Forgot Password ---
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    setForgotError('')
+    if (!forgotEmail.trim()) {
+      setForgotError('Please enter your registered email address.')
+      return
+    }
+    setForgotLoading(true)
+    try {
+      await publicApi.requestPasswordReset(forgotEmail.trim())
+      setForgotSent(true)
+    } catch {
+      setForgotSent(true)
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
   return (
-    <div className="student-portal-wrapper">
-      {/* HERO SECTION */}
-      <section className="student-portal-hero">
-        <div className="student-hero-content">
-          <div className="student-hero-text">
-            <span className="student-hero-eyebrow">RIVERSIDE ACADEMY • ADMISSIONS</span>
-            <h1 className="student-hero-title">
-              Admissions <span className="gold">Portal</span>
-            </h1>
-            <p className="student-hero-desc">
-              Begin your journey at Riverside Academy. Log in to manage your active application, or create an account to start an online enrollment application for your child.
-            </p>
-          </div>
-          <div className="student-hero-decor">
-            <div className="student-hero-motto">
-              <span>Learn • Grow • Succeed</span>
-              <svg className="student-motto-curve" viewBox="0 0 160 20" fill="none">
-                <path d="M5 15 C 50 2, 110 2, 155 15" stroke="#c5a059" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-            </div>
-            <div className="student-hero-image-frame">
-              <img src="/school-campus.jpg" alt="Riverside Academy Campus" className="student-hero-img" />
-            </div>
-          </div>
-        </div>
-        {/* Wave Divider */}
-        <div className="student-hero-wave">
-          <svg viewBox="0 0 1440 80" fill="none" preserveAspectRatio="none">
-            <path
-              d="M0,40 C320,85 720,5 1100,60 C1250,75 1380,50 1440,40 L1440,80 L0,80 Z"
-              fill="#faf7f2"
+    <div className="ra-auth-page">
+      {/* ========================================================
+          LEFT COLUMN: BRANDING & CAMPUS SCENE (approx 48% on desktop)
+          ======================================================== */}
+      <div className="ra-auth-left">
+        <div className="ra-auth-left-top">
+          {/* Return link to main website */}
+          <Link to="/" className="ra-auth-back-link" title="Return to Riverside Academy Website">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            <span>Return to Website</span>
+          </Link>
+
+          {/* School Crest */}
+          <Link to="/" title="Riverside Academy Homepage">
+            <img
+              src="/school-crest.png"
+              alt="Riverside Academy Crest"
+              className="ra-auth-crest"
             />
-          </svg>
+          </Link>
+
+          {/* School Name & Tagline */}
+          <h2 className="ra-auth-school-title">Riverside Academy</h2>
+          <p className="ra-auth-school-tagline">Knowledge &nbsp;•&nbsp; Character &nbsp;•&nbsp; Excellence</p>
+          <div className="ra-auth-gold-divider" />
+
+          {/* Left-Side Message */}
+          {activeMode === 'register' && (
+            <>
+              <h1 className="ra-auth-left-heading">
+                Create Your <span className="gold">Student Account</span>
+              </h1>
+              <p className="ra-auth-left-subtext">
+                Join Riverside Academy and take the next step in your academic journey. Fill in the details below to get started.
+              </p>
+            </>
+          )}
+
+          {activeMode === 'login' && (
+            <>
+              <h1 className="ra-auth-left-heading">
+                Welcome Back to <span className="gold">Riverside Academy</span>
+              </h1>
+              <p className="ra-auth-left-subtext">
+                Access your admissions portal to view, manage, and track your active enrollment applications and academic documents.
+              </p>
+            </>
+          )}
+
+          {activeMode === 'forgot' && (
+            <>
+              <h1 className="ra-auth-left-heading">
+                Account <span className="gold">Recovery</span>
+              </h1>
+              <p className="ra-auth-left-subtext">
+                Reset your password securely to regain access to your admissions portal and application details.
+              </p>
+            </>
+          )}
         </div>
-      </section>
 
-      {/* AUTHENTICATION CARDS SECTION */}
-      <section className="student-auth-section">
-        <div className="student-auth-container">
-          {/* LEFT CARD: APPLICANT LOGIN */}
-          <div className="student-card student-login-card" id="applicant-login">
-            <div className="student-card-header">
-              <div className="student-avatar-badge">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="student-card-title">Applicant Sign In</h2>
-                <p className="student-card-subtitle">Access your admission application</p>
-              </div>
-            </div>
+        {/* Bottom Decorative Wave Text */}
+        <div className="ra-auth-left-motto">
+          Learn • Grow • Succeed
+        </div>
+      </div>
 
-            {loginError && <div className="student-alert student-alert-error">{loginError}</div>}
+      {/* ========================================================
+          RIGHT COLUMN: AUTHENTICATION FORM (approx 52% on desktop)
+          ======================================================== */}
+      <div className="ra-auth-right">
+        <div className="ra-auth-card">
+          {activeMode === 'register' ? (
+            /* ==========================================
+               REGISTRATION FORM
+               ========================================== */
+            <>
+              <span className="ra-auth-eyebrow">STUDENT REGISTRATION</span>
+              <h1 className="ra-auth-title">Create Account</h1>
+              <p className="ra-auth-subtitle">Fill in your details to create your student account.</p>
 
-            <form onSubmit={handleLogin} className="student-form">
-              <div className="student-field-group">
-                <label className="student-label">Email Address</label>
-                <div className="student-input-wrap">
-                  <svg className="student-input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="4" width="20" height="16" rx="2" />
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              {regError && (
+                <div className="ra-auth-alert ra-auth-alert-error">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
-                  <input
-                    type="email"
-                    required
-                    className="student-input"
-                    placeholder="parent@example.com"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                  />
+                  <span>{regError}</span>
                 </div>
-              </div>
+              )}
 
-              <div className="student-field-group">
-                <label className="student-label">Password</label>
-                <div className="student-input-wrap">
-                  <svg className="student-input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  <input
-                    type={showLoginPassword ? 'text' : 'password'}
-                    required
-                    className="student-input"
-                    placeholder="Enter your password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="student-eye-toggle"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    aria-label="Toggle password visibility"
-                  >
-                    {showLoginPassword ? (
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                    )}
-                  </button>
-                </div>
-              </div>
+              <form onSubmit={handleRegister}>
+                <div className="ra-auth-grid-2">
+                  {/* First Name */}
+                  <div className="ra-auth-field">
+                    <label className="ra-auth-label">
+                      First Name <span className="req">*</span>
+                    </label>
+                    <div className="ra-auth-input-wrap">
+                      <svg className="ra-auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                      <input
+                        type="text"
+                        required
+                        className="ra-auth-input"
+                        placeholder="Enter your first name"
+                        value={regForm.firstName}
+                        onChange={(e) => updateReg('firstName', e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-              <div className="student-auth-options">
-                <label className="student-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                  />
-                  <span>Remember me</span>
-                </label>
-                <Link to="/portal" className="student-forgot-link">Forgot password?</Link>
-              </div>
+                  {/* Last Name */}
+                  <div className="ra-auth-field">
+                    <label className="ra-auth-label">
+                      Last Name <span className="req">*</span>
+                    </label>
+                    <div className="ra-auth-input-wrap">
+                      <svg className="ra-auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                      <input
+                        type="text"
+                        required
+                        className="ra-auth-input"
+                        placeholder="Enter your last name"
+                        value={regForm.lastName}
+                        onChange={(e) => updateReg('lastName', e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-              <button
-                type="submit"
-                className="student-btn student-btn-green"
-                disabled={loginLoading}
-              >
-                {loginLoading ? 'Signing in…' : 'Sign in to Application'}
-              </button>
+                  {/* Email Address */}
+                  <div className="ra-auth-field">
+                    <label className="ra-auth-label">
+                      Email Address <span className="req">*</span>
+                    </label>
+                    <div className="ra-auth-input-wrap">
+                      <svg className="ra-auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                      </svg>
+                      <input
+                        type="email"
+                        required
+                        className="ra-auth-input"
+                        placeholder="Enter your email address"
+                        value={regForm.email}
+                        onChange={(e) => updateReg('email', e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-              <div className="student-trust-badge">
-                <svg className="student-trust-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
-                <span>256-Bit SSL Encrypted. Your admissions information is securely transmitted and protected.</span>
-              </div>
-            </form>
-          </div>
+                  {/* Phone Number */}
+                  <div className="ra-auth-field">
+                    <label className="ra-auth-label">
+                      Phone Number <span className="req">*</span>
+                    </label>
+                    <div className="ra-auth-input-wrap">
+                      <svg className="ra-auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                      </svg>
+                      <input
+                        type="tel"
+                        required
+                        className="ra-auth-input"
+                        placeholder="Enter your phone number"
+                        value={regForm.phone}
+                        onChange={(e) => updateReg('phone', e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-          {/* RIGHT CARD: APPLICANT REGISTRATION */}
-          <div className="student-card student-register-card" id="applicant-register">
-            <div className="student-card-header">
-              <div className="student-avatar-badge" style={{ backgroundColor: '#fbf4e6', color: 'var(--bfa-gold-accent)' }}>
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                  <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="student-card-title">Create Applicant Account</h2>
-                <p className="student-card-subtitle">Start your online enrollment application</p>
-              </div>
-            </div>
+                  {/* Date of Birth */}
+                  <div className="ra-auth-field">
+                    <label className="ra-auth-label">
+                      Date of Birth <span className="req">*</span>
+                    </label>
+                    <div className="ra-auth-input-wrap">
+                      <svg className="ra-auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                      <input
+                        type="date"
+                        required
+                        className="ra-auth-input"
+                        placeholder="Select your date of birth"
+                        value={regForm.dob}
+                        onChange={(e) => updateReg('dob', e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-            {regError && <div className="student-alert student-alert-error">{regError}</div>}
+                  {/* Matric No / Student ID (Optional) */}
+                  <div className="ra-auth-field">
+                    <label className="ra-auth-label">
+                      Matric No <span className="opt">(Optional)</span>
+                    </label>
+                    <div className="ra-auth-input-wrap">
+                      <svg className="ra-auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                      </svg>
+                      <input
+                        type="text"
+                        className="ra-auth-input"
+                        placeholder="Enter your matric number"
+                        value={regForm.matricNo}
+                        onChange={(e) => updateReg('matricNo', e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-            <form onSubmit={handleRegister} className="student-form">
-              <div className="student-form-row">
-                <div className="student-field-group">
-                  <label className="student-label">First Name</label>
-                  <div className="student-input-wrap">
-                    <input
-                      type="text"
-                      required
-                      className="student-input"
-                      style={{ paddingLeft: 14 }}
-                      placeholder="e.g. Sarah"
-                      value={regForm.firstName}
-                      onChange={(e) => updateReg('firstName', e.target.value)}
-                    />
+                  {/* Password */}
+                  <div className="ra-auth-field">
+                    <label className="ra-auth-label">
+                      Password <span className="req">*</span>
+                    </label>
+                    <div className="ra-auth-input-wrap">
+                      <svg className="ra-auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                      <input
+                        type={showRegPassword ? 'text' : 'password'}
+                        required
+                        minLength={10}
+                        className="ra-auth-input ra-auth-input-pw"
+                        placeholder="Enter your password"
+                        value={regForm.password}
+                        onChange={(e) => updateReg('password', e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="ra-auth-eye-btn"
+                        onClick={() => setShowRegPassword(!showRegPassword)}
+                        aria-label="Toggle password visibility"
+                      >
+                        {showRegPassword ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        ) : (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div className="ra-auth-field">
+                    <label className="ra-auth-label">
+                      Confirm Password <span className="req">*</span>
+                    </label>
+                    <div className="ra-auth-input-wrap">
+                      <svg className="ra-auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        required
+                        minLength={10}
+                        className="ra-auth-input ra-auth-input-pw"
+                        placeholder="Confirm your password"
+                        value={regForm.confirmPassword}
+                        onChange={(e) => updateReg('confirmPassword', e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="ra-auth-eye-btn"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        aria-label="Toggle password visibility"
+                      >
+                        {showConfirmPassword ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        ) : (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="student-field-group">
-                  <label className="student-label">Last Name</label>
-                  <div className="student-input-wrap">
-                    <input
-                      type="text"
-                      required
-                      className="student-input"
-                      style={{ paddingLeft: 14 }}
-                      placeholder="e.g. Jenkins"
-                      value={regForm.lastName}
-                      onChange={(e) => updateReg('lastName', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="student-field-group">
-                <label className="student-label">Email Address</label>
-                <div className="student-input-wrap">
-                  <svg className="student-input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="4" width="20" height="16" rx="2" />
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                  </svg>
-                  <input
-                    type="email"
-                    required
-                    className="student-input"
-                    placeholder="parent@example.com"
-                    value={regForm.email}
-                    onChange={(e) => updateReg('email', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="student-field-group">
-                <label className="student-label">Phone Number</label>
-                <div className="student-input-wrap">
-                  <svg className="student-input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                  <input
-                    type="tel"
-                    className="student-input"
-                    placeholder="+1 (555) 000-0000"
-                    value={regForm.phone}
-                    onChange={(e) => updateReg('phone', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="student-field-group">
-                <label className="student-label">
-                  Password <span className="student-sub-hint">(min. 10 characters)</span>
-                </label>
-                <div className="student-input-wrap">
-                  <svg className="student-input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  <input
-                    type={showRegPassword ? 'text' : 'password'}
-                    required
-                    minLength={10}
-                    className="student-input"
-                    placeholder="Create a strong password"
-                    value={regForm.password}
-                    onChange={(e) => updateReg('password', e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="student-eye-toggle"
-                    onClick={() => setShowRegPassword(!showRegPassword)}
-                    aria-label="Toggle password visibility"
-                  >
-                    {showRegPassword ? (
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                    )}
-                  </button>
-                </div>
-                {regForm.password && (
-                  <div className="student-strength-bar-wrap">
-                    <div
-                      className="student-strength-bar"
-                      style={{
-                        width: passwordStrength.score === 1 ? '33%' : passwordStrength.score === 2 ? '66%' : '100%',
-                        backgroundColor: passwordStrength.color,
-                      }}
-                    />
-                    <span className="student-strength-label" style={{ color: passwordStrength.color }}>
-                      Password Strength: {passwordStrength.label}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="student-field-group">
-                <label className="student-label">Confirm Password</label>
-                <div className="student-input-wrap">
-                  <svg className="student-input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    required
-                    className="student-input"
-                    placeholder="Repeat your password"
-                    value={regForm.confirmPassword}
-                    onChange={(e) => updateReg('confirmPassword', e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="student-eye-toggle"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    aria-label="Toggle confirm password visibility"
-                  >
-                    {showConfirmPassword ? (
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                    )}
-                  </button>
-                </div>
+                {/* Password Match Status */}
                 {passwordsMatch && (
-                  <span className="student-match-badge match">✓ Passwords match</span>
+                  <span className="ra-auth-match-hint matched">
+                    <svg width="13" height="13" viewBox="0 0 16 16"><path fill="currentColor" d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                    Passwords match
+                  </span>
                 )}
                 {passwordsMismatch && (
-                  <span className="student-match-badge mismatch">✗ Passwords do not match</span>
+                  <span className="ra-auth-match-hint mismatched">
+                    <svg width="13" height="13" viewBox="0 0 16 16"><path fill="currentColor" d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                    Passwords do not match
+                  </span>
                 )}
-              </div>
 
-              <div className="student-checkbox-group">
-                <label className="student-checkbox-label">
+                {/* Password Strength Meter & Checklist */}
+                <div className="ra-auth-pw-box">
+                  <div className="ra-auth-pw-col">
+                    <div className="ra-auth-pw-header">
+                      <span>Password strength</span>
+                      {strengthLabel && (
+                        <span className="ra-auth-pw-score-label" style={{ color: strengthColor }}>
+                          {strengthLabel}
+                        </span>
+                      )}
+                    </div>
+                    <div className="ra-auth-pw-meter">
+                      <div className={`ra-auth-pw-bar ${strengthBars >= 1 ? 'filled' : ''}`} />
+                      <div className={`ra-auth-pw-bar ${strengthBars >= 2 ? 'filled' : ''}`} />
+                      <div className={`ra-auth-pw-bar ${strengthBars >= 3 ? 'filled' : ''}`} />
+                      <div className={`ra-auth-pw-bar ${strengthBars >= 4 ? 'filled' : ''}`} />
+                    </div>
+                  </div>
+
+                  <div className="ra-auth-pw-col">
+                    <div className="ra-auth-pw-header">
+                      <span>Password must contain:</span>
+                    </div>
+                    <ul className="ra-auth-pw-rules">
+                      <li className={`ra-auth-pw-rule-item ${hasLength ? 'met' : ''}`}>
+                        <svg className="ra-auth-pw-icon" viewBox="0 0 16 16">
+                          <path fill="currentColor" d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
+                        </svg>
+                        At least 10 characters
+                      </li>
+                      <li className={`ra-auth-pw-rule-item ${hasUpper ? 'met' : ''}`}>
+                        <svg className="ra-auth-pw-icon" viewBox="0 0 16 16">
+                          <path fill="currentColor" d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
+                        </svg>
+                        One uppercase letter
+                      </li>
+                      <li className={`ra-auth-pw-rule-item ${hasLower ? 'met' : ''}`}>
+                        <svg className="ra-auth-pw-icon" viewBox="0 0 16 16">
+                          <path fill="currentColor" d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
+                        </svg>
+                        One lowercase letter
+                      </li>
+                      <li className={`ra-auth-pw-rule-item ${hasNumber ? 'met' : ''}`}>
+                        <svg className="ra-auth-pw-icon" viewBox="0 0 16 16">
+                          <path fill="currentColor" d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
+                        </svg>
+                        One number
+                      </li>
+                      <li className={`ra-auth-pw-rule-item ${hasSpecial ? 'met' : ''}`}>
+                        <svg className="ra-auth-pw-icon" viewBox="0 0 16 16">
+                          <path fill="currentColor" d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
+                        </svg>
+                        One special character
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Terms and Privacy Agreement */}
+                <div className="ra-auth-agree-row">
                   <input
                     type="checkbox"
+                    id="raAdmissionsAgreeTerms"
                     required
+                    className="ra-auth-checkbox"
                     checked={regForm.agreeTerms}
                     onChange={(e) => updateReg('agreeTerms', e.target.checked)}
                   />
-                  <span>
-                    I agree to the <Link to="/terms">Terms & Conditions</Link> and{' '}
-                    <Link to="/privacy">Privacy Policy</Link> for Riverside Academy Admissions.
-                  </span>
-                </label>
-              </div>
+                  <label htmlFor="raAdmissionsAgreeTerms">
+                    I agree to the <Link to="/terms" className="ra-auth-agree-link">Terms of Service</Link> and{' '}
+                    <Link to="/privacy" className="ra-auth-agree-link">Privacy Policy</Link>.
+                  </label>
+                </div>
 
-              <button
-                type="submit"
-                className="student-btn student-btn-gold"
-                disabled={regLoading}
-              >
-                {regLoading ? 'Creating account…' : 'Create Account & Begin Application'}
-              </button>
-            </form>
-          </div>
+                {/* Submit Register Button */}
+                <button
+                  type="submit"
+                  disabled={regLoading}
+                  className="ra-auth-btn"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="8.5" cy="7" r="4" />
+                    <line x1="20" y1="8" x2="20" y2="14" />
+                    <line x1="23" y1="11" x2="17" y2="11" />
+                  </svg>
+                  <span>{regLoading ? 'Creating account…' : 'Register'}</span>
+                </button>
+              </form>
+
+              {/* Switch to Login */}
+              <div className="ra-auth-switch">
+                <span className="ra-auth-switch-line" />
+                <span>
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    className="ra-auth-switch-btn"
+                    onClick={() => setActiveMode('login')}
+                  >
+                    Log in
+                  </button>
+                </span>
+                <span className="ra-auth-switch-line" />
+              </div>
+            </>
+          ) : activeMode === 'login' ? (
+            /* ==========================================
+               LOGIN FORM
+               ========================================== */
+            <>
+              <span className="ra-auth-eyebrow">ADMISSIONS SIGN IN</span>
+              <h1 className="ra-auth-title">Welcome Back</h1>
+              <p className="ra-auth-subtitle">Enter your credentials to access your admissions account.</p>
+
+              {loginError && (
+                <div className="ra-auth-alert ra-auth-alert-error">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleLogin}>
+                {/* Email Address */}
+                <div className="ra-auth-field">
+                  <label className="ra-auth-label">
+                    Email Address <span className="req">*</span>
+                  </label>
+                  <div className="ra-auth-input-wrap">
+                    <svg className="ra-auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                    <input
+                      type="text"
+                      required
+                      className="ra-auth-input"
+                      placeholder="Enter your email address"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div className="ra-auth-field">
+                  <label className="ra-auth-label">
+                    Password <span className="req">*</span>
+                  </label>
+                  <div className="ra-auth-input-wrap">
+                    <svg className="ra-auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <input
+                      type={showLoginPassword ? 'text' : 'password'}
+                      required
+                      className="ra-auth-input ra-auth-input-pw"
+                      placeholder="Enter your password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="ra-auth-eye-btn"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      aria-label="Toggle password visibility"
+                    >
+                      {showLoginPassword ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Options Row */}
+                <div className="ra-auth-options">
+                  <label className="ra-auth-agree-row" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      className="ra-auth-checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                    />
+                    <span>Remember me</span>
+                  </label>
+                  <button
+                    type="button"
+                    className="ra-auth-forgot-link"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    onClick={() => setActiveMode('forgot')}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+
+                {/* Submit Login Button */}
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="ra-auth-btn"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                    <polyline points="10 17 15 12 10 7" />
+                    <line x1="15" y1="12" x2="3" y2="12" />
+                  </svg>
+                  <span>{loginLoading ? 'Signing in…' : 'Log In'}</span>
+                </button>
+              </form>
+
+              {/* Switch to Register */}
+              <div className="ra-auth-switch">
+                <span className="ra-auth-switch-line" />
+                <span>
+                  Don't have an account?{' '}
+                  <button
+                    type="button"
+                    className="ra-auth-switch-btn"
+                    onClick={() => setActiveMode('register')}
+                  >
+                    Create one
+                  </button>
+                </span>
+                <span className="ra-auth-switch-line" />
+              </div>
+            </>
+          ) : (
+            /* ==========================================
+               FORGOT PASSWORD FORM
+               ========================================== */
+            <>
+              <span className="ra-auth-eyebrow">PASSWORD RECOVERY</span>
+              <h1 className="ra-auth-title">Reset Password</h1>
+              <p className="ra-auth-subtitle">
+                Enter your registered email address to receive password reset instructions.
+              </p>
+
+              {forgotSent ? (
+                <div className="ra-auth-alert ra-auth-alert-success" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <strong>Instructions Sent</strong>
+                  <span>If an account exists with that email address, we've sent instructions to reset your password.</span>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPassword}>
+                  {forgotError && (
+                    <div className="ra-auth-alert ra-auth-alert-error">
+                      <span>{forgotError}</span>
+                    </div>
+                  )}
+                  <div className="ra-auth-field">
+                    <label className="ra-auth-label">
+                      Email Address <span className="req">*</span>
+                    </label>
+                    <div className="ra-auth-input-wrap">
+                      <svg className="ra-auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                      </svg>
+                      <input
+                        type="email"
+                        required
+                        className="ra-auth-input"
+                        placeholder="Enter your email address"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="ra-auth-btn"
+                  >
+                    <span>{forgotLoading ? 'Sending…' : 'Send Reset Link'}</span>
+                  </button>
+                </form>
+              )}
+
+              {/* Back to Login */}
+              <div className="ra-auth-switch">
+                <span className="ra-auth-switch-line" />
+                <span>
+                  Remember your password?{' '}
+                  <button
+                    type="button"
+                    className="ra-auth-switch-btn"
+                    onClick={() => setActiveMode('login')}
+                  >
+                    Log in
+                  </button>
+                </span>
+                <span className="ra-auth-switch-line" />
+              </div>
+            </>
+          )}
         </div>
-      </section>
+      </div>
     </div>
   )
 }
@@ -702,11 +1051,12 @@ function ApplicationDetail({ application, onBack, onUpdated }) {
   )
 }
 
-export default function AdmissionsApply() {
+export default function AdmissionsApply({ defaultMode = 'register' }) {
   const [signedIn, setSignedIn] = useState(publicApi.isAuthenticated())
   const [applications, setApplications] = useState(null)
   const [selected, setSelected] = useState(null)
   const [error, setError] = useState('')
+  const [initialProfile, setInitialProfile] = useState(null)
 
   useEffect(() => { document.title = 'Apply — Riverside Academy Admissions' }, [])
 
@@ -726,7 +1076,15 @@ export default function AdmissionsApply() {
   useEffect(() => { if (signedIn) loadApplications() }, [signedIn])
 
   if (!signedIn) {
-    return <ApplicantAuth onSignedIn={() => setSignedIn(true)} />
+    return (
+      <ApplicantAuth
+        defaultMode={defaultMode}
+        onSignedIn={(profile) => {
+          if (profile) setInitialProfile(profile)
+          setSignedIn(true)
+        }}
+      />
+    )
   }
 
   if (selected) {
@@ -755,7 +1113,7 @@ export default function AdmissionsApply() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
             <button
               className="bfa-btn bfa-btn-gold"
-              onClick={() => setSelected({ ...EMPTY_APPLICATION, status: 'started', documents: [] })}
+              onClick={() => setSelected({ ...EMPTY_APPLICATION, ...(initialProfile || {}), status: 'started', documents: [] })}
             >
               + Start a New Application
             </button>
@@ -779,7 +1137,7 @@ export default function AdmissionsApply() {
               </p>
               <button
                 className="bfa-btn bfa-btn-gold"
-                onClick={() => setSelected({ ...EMPTY_APPLICATION, status: 'started', documents: [] })}
+                onClick={() => setSelected({ ...EMPTY_APPLICATION, ...(initialProfile || {}), status: 'started', documents: [] })}
               >
                 + Start an Application
               </button>

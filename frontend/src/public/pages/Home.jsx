@@ -46,7 +46,7 @@ export default function Home() {
           <div>
             <p className="bfa-eyebrow">{school?.name || 'Riverside Academy'} · {school?.tagline || 'Learning with purpose'}</p>
             <h1>
-              {school?.hero_heading ? (
+              {school?.hero_heading && school.hero_heading !== 'Where Ambition Meets Opportunity.' ? (
                 school.hero_heading.includes('Opportunity') ? (
                   <>
                     {school.hero_heading.split('Opportunity')[0]}
@@ -57,17 +57,21 @@ export default function Home() {
                   school.hero_heading
                 )
               ) : (
-                <>Where Ambition Meets <span className="gold">Opportunity.</span></>
+                <>
+                  Where Ambition<br />
+                  Meets<br />
+                  <span className="gold">Opportunity.</span>
+                </>
               )}
             </h1>
             <p>{school?.hero_subtext || 'Where every learner is seen, challenged, and prepared to make a meaningful difference in the world.'}</p>
             <div className="bfa-hero-actions">
               <Link to="/admissions/apply" className="bfa-btn bfa-btn-gold">Enroll Now →</Link>
-              <Link to="/about" className="bfa-btn bfa-btn-outline">Learn More</Link>
+              <Link to="/about" className="bfa-btn bfa-btn-white">Learn More</Link>
             </div>
           </div>
           <div className="bfa-hero-card">
-            <p className="bfa-eyebrow" style={{ marginBottom: 18 }}>Riverside Academy at a glance</p>
+            <p className="bfa-hero-card-title">{((school?.name || 'Riverside Academy') + ' at a glance').toUpperCase()}</p>
             <div className="bfa-hero-stats">
               <div><strong>{school?.total_students || '—'}</strong><span>Total students</span></div>
               <div><strong>{school?.total_teachers || '—'}</strong><span>Total teachers</span></div>

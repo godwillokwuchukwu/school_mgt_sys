@@ -12,7 +12,7 @@ export default function Programs() {
 
   return (
     <>
-      <PageHero crumb="Programs" title="Sports, arts & extracurricular life" detail="Leadership, creativity, and community, the experiences that round out a Riverside education." />
+      <PageHero crumb="Programs" title="Sports, arts & extracurricular life" detail="Leadership, creativity, and community, the experiences that round out a Riverside education." pageClass="hero-programs" />
       <section className="bfa-section">
         <div className="bfa-container">
           {programs === null ? (

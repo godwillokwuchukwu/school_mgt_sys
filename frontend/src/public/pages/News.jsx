@@ -45,7 +45,7 @@ export default function News() {
   if (articles === null || events === null) {
     return (
       <>
-        <PageHero crumb="News & Events" title="School news & calendar" detail="Stay informed on school happenings, achievements, and upcoming events." />
+        <PageHero crumb="News & Events" title="School news & calendar" detail="Stay informed on campus life, academic achievements, announcements, and events." pageClass="hero-news" />
         <section className="bfa-section"><div className="bfa-container"><Loading label="Loading news and events…" /></div></section>
       </>
     )
@@ -67,7 +67,7 @@ export default function News() {
 
   return (
     <>
-      <PageHero crumb="News & Events" title="School news & calendar" detail="Stay informed on campus life, academic achievements, announcements, and events." />
+      <PageHero crumb="News & Events" title="School news & calendar" detail="Stay informed on campus life, academic achievements, announcements, and events." pageClass="hero-news" />
       <section className="bfa-section">
         <div className="bfa-container">
           <div className="bfa-hub-filter-bar">

@@ -16,7 +16,7 @@ export default function About() {
 
   return (
     <>
-      <PageHero crumb="About us" title="A school built on trust and ambition" detail={school.tagline} />
+      <PageHero crumb="About us" title="A school built on trust and ambition" detail={school.tagline || 'Founded with a mission to inspire curiosity, instill integrity, and ignite potential.'} pageClass="hero-about" />
       <section className="bfa-section bfa-section-alt">
         <div className="bfa-container bfa-grid bfa-grid-2">
           <div>

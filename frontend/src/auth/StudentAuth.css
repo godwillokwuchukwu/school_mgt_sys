@@ -591,3 +591,631 @@
   }
 }
 
+/* ==========================================================================
+   Riverside Academy - Split-Screen Student Registration & Login Portal
+   Design Reference: media_1789748376703.png
+   ========================================================================== */
+
+:root {
+  --riverside-green: #0D3B2E;
+  --riverside-green-dark: #082C22;
+  --riverside-green-light: #245B49;
+  --riverside-gold: #B88A3B;
+  --riverside-gold-light: #D1A85A;
+  --riverside-gold-hover: #9F7431;
+  --riverside-cream: #F7F5EF;
+  --riverside-white: #FFFFFF;
+  --riverside-text: #18352D;
+  --riverside-muted: #71817C;
+  --riverside-border: #D9DFDC;
+  --riverside-border-focus: #18794E;
+  --riverside-error: #B42318;
+  --riverside-success: #18794E;
+}
+
+.ra-auth-page {
+  min-height: 100vh;
+  display: flex;
+  width: 100%;
+  background: #ffffff;
+  color: var(--riverside-text);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-sizing: border-box;
+}
+
+/* --- Left Branding Panel (approx 48% on desktop) --- */
+.ra-auth-left {
+  flex: 0 0 47%;
+  min-width: 360px;
+  max-width: 580px;
+  position: relative;
+  background: url('/portal-side-bg.jpg') center bottom / cover no-repeat, var(--riverside-cream);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  padding: 44px 38px 36px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-right: 1px solid var(--riverside-border);
+}
+
+.ra-auth-left-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.ra-auth-back-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--riverside-green);
+  text-decoration: none;
+  margin-bottom: 14px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--riverside-border);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.ra-auth-back-link:hover {
+  background: #ffffff;
+  color: var(--riverside-gold);
+  border-color: var(--riverside-gold);
+  transform: translateX(-2px);
+}
+
+.ra-auth-crest {
+  width: 112px;
+  height: auto;
+  display: block;
+  margin: 0 auto 10px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.09));
+  transition: transform 0.2s ease;
+}
+
+.ra-auth-crest:hover {
+  transform: scale(1.03);
+}
+
+.ra-auth-school-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--riverside-green);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.5px;
+}
+
+.ra-auth-school-tagline {
+  font-size: 13px;
+  color: var(--riverside-muted);
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  margin: 0 0 16px 0;
+}
+
+.ra-auth-gold-divider {
+  width: 52px;
+  height: 2.5px;
+  background: var(--riverside-gold);
+  margin: 0 auto 26px;
+  border-radius: 2px;
+}
+
+.ra-auth-left-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 27px;
+  font-weight: 700;
+  color: var(--riverside-green);
+  line-height: 1.25;
+  margin: 0 0 12px 0;
+}
+
+.ra-auth-left-heading span.gold {
+  color: var(--riverside-gold);
+}
+
+.ra-auth-left-subtext {
+  font-size: 13.5px;
+  color: var(--riverside-muted);
+  line-height: 1.6;
+  max-width: 370px;
+  margin: 0 auto;
+}
+
+.ra-auth-left-motto {
+  font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', cursive, sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 1px;
+  margin-top: auto;
+  padding-top: 50px;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+  position: relative;
+  z-index: 2;
+}
+
+/* --- Right Registration / Login Panel (approx 52% on desktop) --- */
+.ra-auth-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 52px;
+  background: #ffffff;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.ra-auth-card {
+  width: 100%;
+  max-width: 720px;
+  box-sizing: border-box;
+}
+
+.ra-auth-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--riverside-green);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.ra-auth-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--riverside-green);
+  margin: 0 0 6px 0;
+  letter-spacing: -0.5px;
+}
+
+.ra-auth-subtitle {
+  font-size: 14px;
+  color: var(--riverside-muted);
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+/* --- Form Fields & Grid --- */
+.ra-auth-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 20px;
+  margin-bottom: 14px;
+}
+
+.ra-auth-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+}
+
+.ra-auth-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--riverside-text);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.ra-auth-label .req {
+  color: var(--riverside-error);
+  margin-left: 3px;
+}
+
+.ra-auth-label .opt {
+  color: var(--riverside-muted);
+  font-weight: 400;
+  font-size: 11.5px;
+  margin-left: 5px;
+}
+
+.ra-auth-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ra-auth-input-icon {
+  position: absolute;
+  left: 14px;
+  color: #8fa097;
+  pointer-events: none;
+  width: 18px;
+  height: 18px;
+}
+
+.ra-auth-input-right-icon {
+  position: absolute;
+  right: 14px;
+  color: #8fa097;
+  pointer-events: none;
+  width: 18px;
+  height: 18px;
+}
+
+.ra-auth-input {
+  width: 100%;
+  height: 48px;
+  border: 1px solid var(--riverside-border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0 14px 0 42px;
+  font-size: 13.5px;
+  color: var(--riverside-text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.ra-auth-input:focus {
+  border-color: var(--riverside-border-focus);
+  box-shadow: 0 0 0 3px rgba(24, 121, 78, 0.1);
+}
+
+.ra-auth-input::placeholder {
+  color: #9cb0a5;
+  font-size: 13px;
+}
+
+.ra-auth-input-pw {
+  padding-right: 42px;
+}
+
+.ra-auth-eye-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #8fa097;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.ra-auth-eye-btn:hover {
+  color: var(--riverside-green);
+}
+
+/* Password Match Indicator */
+.ra-auth-match-hint {
+  font-size: 11.5px;
+  margin-top: 4px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ra-auth-match-hint.matched {
+  color: var(--riverside-success);
+}
+
+.ra-auth-match-hint.mismatched {
+  color: var(--riverside-error);
+}
+
+/* --- Password Strength & Requirements Card (matches media_1789750854418.png) --- */
+.ra-auth-pw-box {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 22px;
+  margin: 8px 0 18px;
+  padding: 16px 20px;
+  background: #FAF8F3;
+  border-radius: 10px;
+  border: 1px solid #EFEAE1;
+  box-sizing: border-box;
+}
+
+.ra-auth-pw-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.ra-auth-pw-header {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--riverside-green);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ra-auth-pw-score-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.ra-auth-pw-meter {
+  display: flex;
+  gap: 8px;
+  height: 6px;
+  margin-top: 4px;
+}
+
+.ra-auth-pw-bar {
+  flex: 1;
+  height: 100%;
+  border-radius: 999px;
+  background: #DDD8CE;
+  transition: background-color 0.25s ease;
+}
+
+.ra-auth-pw-bar.filled {
+  background: var(--riverside-green);
+}
+
+.ra-auth-pw-rules {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, auto);
+  gap: 6px 14px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.ra-auth-pw-rule-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #71827D;
+  transition: color 0.2s, font-weight 0.2s;
+  white-space: nowrap;
+}
+
+.ra-auth-pw-rule-item.met {
+  color: var(--riverside-green);
+  font-weight: 600;
+}
+
+.ra-auth-pw-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: #8C9794;
+  transition: color 0.2s;
+}
+
+.ra-auth-pw-rule-item.met .ra-auth-pw-icon {
+  color: var(--riverside-success);
+}
+
+/* --- Terms & Conditions --- */
+.ra-auth-agree-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 22px;
+  font-size: 13px;
+  color: #5E6E68;
+}
+
+.ra-auth-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #B0B8B5;
+  border-radius: 4px;
+  accent-color: var(--riverside-green);
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.ra-auth-agree-link {
+  color: var(--riverside-green);
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+.ra-auth-agree-link:hover {
+  color: var(--riverside-gold);
+}
+
+/* --- Login Options Row --- */
+.ra-auth-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0 20px;
+  font-size: 12.5px;
+  color: var(--riverside-muted);
+}
+
+.ra-auth-forgot-link {
+  color: var(--riverside-gold);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ra-auth-forgot-link:hover {
+  text-decoration: underline;
+}
+
+/* --- Submit Button --- */
+.ra-auth-btn {
+  width: 100%;
+  height: 48px;
+  background: #C39D55;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.ra-auth-btn:hover:not(:disabled) {
+  background: #B28B45;
+  box-shadow: 0 4px 14px rgba(195, 157, 85, 0.35);
+}
+
+.ra-auth-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.ra-auth-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* --- Switch Mode Footer --- */
+.ra-auth-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 24px;
+  font-size: 13px;
+  color: #5E6E68;
+}
+
+.ra-auth-switch-line {
+  flex: 0 0 55px;
+  height: 1px;
+  background: #E2E8F0;
+}
+
+.ra-auth-switch-btn {
+  color: var(--riverside-green);
+  font-weight: 700;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 0;
+}
+
+.ra-auth-switch-btn:hover {
+  color: var(--riverside-gold);
+}
+
+/* --- Alerts --- */
+.ra-auth-alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ra-auth-alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.ra-auth-alert-success {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+/* --- Success State Card --- */
+.ra-auth-success-card {
+  text-align: center;
+  padding: 28px 16px;
+}
+
+.ra-auth-success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+
+.ra-auth-success-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--riverside-green);
+  margin: 0 0 8px;
+}
+
+.ra-auth-success-text {
+  font-size: 14px;
+  color: var(--riverside-muted);
+  line-height: 1.6;
+  max-width: 440px;
+  margin: 0 auto 24px;
+}
+
+.ra-auth-success-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* --- Responsive Media Queries --- */
+@media (max-width: 960px) {
+  .ra-auth-page {
+    flex-direction: column;
+  }
+  .ra-auth-left {
+    flex: none;
+    width: 100%;
+    max-width: 100%;
+    min-height: auto;
+    padding: 36px 24px 28px;
+    border-right: none;
+    border-bottom: 1px solid var(--riverside-border);
+  }
+  .ra-auth-left-motto {
+    display: none;
+  }
+  .ra-auth-right {
+    padding: 36px 24px;
+  }
+  .ra-auth-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .ra-auth-pw-box {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+

@@ -62,7 +62,7 @@ export default function Academics() {
 
   return (
     <>
-      <PageHero crumb="Academics" title="A curriculum built for real growth" detail="Structured, rigorous, and designed to meet every learner where they are." />
+      <PageHero crumb="Academics" title="A curriculum built for real growth" detail="Structured, rigorous, and designed to meet every learner where they are." pageClass="hero-academics" />
 
       <section className="bfa-section bfa-section-alt">
         <div className="bfa-container">

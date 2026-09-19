@@ -8,6 +8,4 @@ services:
     envVars:
       - key: DEBUG
         value: "False"
-      - key: USE_SQLITE
-        value: "False"
 

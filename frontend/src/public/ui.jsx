@@ -16,9 +16,9 @@ export function SuccessBanner({ message }) {
   return <div className="bfa-success">{message}</div>
 }
 
-export function PageHero({ crumb, title, detail }) {
+export function PageHero({ crumb, title, detail, pageClass = '' }) {
   return (
-    <section className="bfa-page-hero">
+    <section className={`bfa-page-hero ${pageClass}`.trim()}>
       <div className="bfa-container">
         {crumb && <p className="bfa-breadcrumb">{crumb}</p>}
         <h1>{title}</h1>

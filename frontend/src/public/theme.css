@@ -115,13 +115,14 @@
 
 /* --- Hero (matches original .public-hero campus-photo treatment) --- */
 .bfa-hero {
-  min-height: 480px;
-  padding: 90px 6vw 70px;
-  background: linear-gradient(90deg, #102f24e8 0%, #183d2ca8 45%, #183d2c35), url('/school-campus.jpg') center/cover, #28533d;
+  min-height: 500px;
+  padding: 95px 6vw 75px;
+  background: linear-gradient(90deg, rgba(8, 28, 21, 0.94) 0%, rgba(14, 61, 47, 0.80) 45%, rgba(10, 35, 27, 0.65) 100%), url('/hero-home.jpg') center/cover no-repeat;
   color: #fff;
+  position: relative;
 }
-.bfa-hero .bfa-container { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: flex-end; max-width: 1180px; }
-.bfa-eyebrow { color: var(--bfa-gold-light); font-weight: 700; letter-spacing: 1.2px; font-size: 11px; text-transform: uppercase; margin-bottom: 16px; }
+.bfa-hero .bfa-container { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: flex-end; max-width: 1200px; }
+.bfa-eyebrow { color: var(--bfa-gold-light); font-weight: 700; letter-spacing: 2px; font-size: 11px; text-transform: uppercase; margin-bottom: 16px; display: inline-block; }
 
 /* Hero headings on dark background MUST be brilliant white with gold accents */
 .bfa-public .bfa-hero h1,
@@ -133,7 +134,13 @@
   color: #ffffff !important;
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
 }
-.bfa-hero h1 { font-size: clamp(38px, 5vw, 62px); line-height: 1.05; margin: 0 0 20px; letter-spacing: -1px; }
+.bfa-hero h1 {
+  font-size: clamp(38px, 5.2vw, 62px);
+  line-height: 1.08;
+  margin: 0 0 20px;
+  letter-spacing: -1px;
+  font-family: 'Playfair Display', Georgia, serif;
+}
 .bfa-hero h1 em,
 .bfa-hero h1 span.gold,
 .student-hero-title span.gold,
@@ -141,14 +148,49 @@
   color: var(--bfa-gold-light) !important;
   font-style: normal;
 }
-.bfa-hero p { font-size: 15px; color: #e1e7d9; max-width: 460px; margin: 0 0 28px; line-height: 1.7; }
-.bfa-hero-actions { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
-.bfa-hero-card {
-  padding: 20px; border-left: 1px solid var(--bfa-gold-light); color: #f2dfb5; font-size: 11px;
+.bfa-hero p { font-size: 15px; color: #e1e7d9; max-width: 480px; margin: 0 0 28px; line-height: 1.7; }
+.bfa-hero-actions { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.bfa-btn-white {
+  background: #ffffff;
+  color: var(--bfa-navy);
+  border: none;
+  font-weight: 700;
+  border-radius: var(--bfa-radius);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 13px;
+  transition: 0.2s ease;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
 }
-.bfa-hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 8px; }
-.bfa-hero-stats div strong { display: block; font: 23px/1.1 Georgia, serif; color: #fff; margin-top: 6px; }
-.bfa-hero-stats div span { font-size: 11px; color: #f2dfb5; }
+.bfa-btn-white:hover {
+  background: #faf7f2;
+  color: var(--bfa-navy-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+.bfa-hero-card {
+  padding: 12px 0 12px 24px;
+  border-left: 2px solid var(--bfa-gold-light);
+  color: #f2dfb5;
+  font-size: 11px;
+  background: transparent;
+}
+.bfa-hero-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #ffffff;
+  margin: 0 0 16px 0;
+}
+.bfa-hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 28px; margin-top: 8px; }
+.bfa-hero-stats div { padding-bottom: 6px; }
+.bfa-hero-stats div strong { display: block; font: 25px/1.1 'Playfair Display', Georgia, serif; color: #fff; margin-bottom: 4px; }
+.bfa-hero-stats div span { font-size: 11px; color: #c4d6cb; display: block; }
 
 /* --- Sections --- */
 .bfa-section { padding: 70px 0; }
@@ -256,31 +298,47 @@
 
 /* --- Simple page header (About/Academics/etc.) --- */
 .bfa-page-hero {
-  background: linear-gradient(135deg, #09281f 0%, #0e3d2f 55%, #134e3f 100%);
+  background: linear-gradient(90deg, rgba(8, 28, 21, 0.94) 0%, rgba(14, 61, 47, 0.82) 48%, rgba(10, 35, 27, 0.70) 100%), url('/hero-home.jpg') center/cover no-repeat;
   color: #fff;
-  padding: 65px 0 60px;
+  padding: 85px 0 75px;
   position: relative;
+  min-height: 240px;
+}
+.bfa-page-hero.hero-about {
+  background: linear-gradient(90deg, rgba(8, 28, 21, 0.94) 0%, rgba(14, 61, 47, 0.80) 48%, rgba(10, 35, 27, 0.65) 100%), url('/hero-about.jpg') center/cover no-repeat;
+}
+.bfa-page-hero.hero-academics {
+  background: linear-gradient(90deg, rgba(8, 28, 21, 0.94) 0%, rgba(14, 61, 47, 0.80) 48%, rgba(10, 35, 27, 0.65) 100%), url('/hero-academics.jpg') center/cover no-repeat;
+}
+.bfa-page-hero.hero-programs {
+  background: linear-gradient(90deg, rgba(8, 28, 21, 0.94) 0%, rgba(14, 61, 47, 0.80) 48%, rgba(10, 35, 27, 0.65) 100%), url('/hero-programs.jpg') center/cover no-repeat;
+}
+.bfa-page-hero.hero-news {
+  background: linear-gradient(90deg, rgba(8, 28, 21, 0.94) 0%, rgba(14, 61, 47, 0.80) 48%, rgba(10, 35, 27, 0.65) 100%), url('/hero-news.jpg') center/cover no-repeat;
 }
 .bfa-page-hero h1 {
-  font-size: 38px;
-  margin: 6px 0 10px;
-  color: #fff;
+  font-size: clamp(34px, 4.5vw, 48px);
+  margin: 6px 0 12px;
+  color: #fff !important;
   font-family: 'Playfair Display', Georgia, serif;
   font-weight: 700;
+  line-height: 1.15;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
 }
 .bfa-page-hero p {
   color: #d2e4db;
-  max-width: 640px;
+  max-width: 660px;
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 .bfa-breadcrumb {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--bfa-gold-light);
   margin-bottom: 8px;
+  display: inline-block;
 }
 
 .bfa-empty { text-align: center; padding: 40px 20px; color: var(--bfa-muted); }

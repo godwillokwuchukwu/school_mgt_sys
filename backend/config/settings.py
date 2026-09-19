@@ -97,27 +97,9 @@ import sys
 
 # --- Database ---
 _raw_db_url = os.environ.get("DATABASE_URL", "").strip()
-_use_sqlite_env = os.environ.get("USE_SQLITE", "").strip().lower()
-USE_SQLITE = _use_sqlite_env in ("true", "1", "yes", "t")
 
-if "test" in sys.argv or "pytest" in sys.modules or USE_SQLITE:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
-elif _raw_db_url:
+if _raw_db_url:
     DATABASES = {"default": env.db_url_config(_raw_db_url)}
-elif os.environ.get("VERCEL"):
-    import tempfile
-
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": Path(tempfile.gettempdir()) / "db.sqlite3",
-        }
-    }
 else:
     DATABASES = {
         "default": {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { publicApi } from './api'
 import SchoolCrest from './components/SchoolCrest'
 import './theme.css'
@@ -115,8 +115,6 @@ function Footer({ school }) {
           </div>
           <div>
             <h5>Resources</h5>
-            <Link to="/login" style={{ color: 'var(--bfa-gold-light)', fontWeight: 600 }}>Student Portal</Link>
-            <Link to="/portal">Staff Portal</Link>
             <Link to="/news">News & Events</Link>
             <Link to="/faq">FAQ</Link>
             <Link to="/privacy">Privacy Policy</Link>
@@ -141,10 +139,21 @@ function Footer({ school }) {
 
 export default function PublicLayout() {
   const [school, setSchool] = useState(null)
+  const location = useLocation()
 
   useEffect(() => {
     publicApi.school().then(setSchool).catch(() => setSchool(null))
   }, [])
+
+  const isAdmissionsAuth =
+    (location.pathname === '/admissions/apply' ||
+      location.pathname === '/admissions/register' ||
+      location.pathname === '/admissions/login') &&
+    !publicApi.isAuthenticated()
+
+  if (isAdmissionsAuth) {
+    return <Outlet context={{ school }} />
+  }
 
   return (
     <div className="bfa-public">
