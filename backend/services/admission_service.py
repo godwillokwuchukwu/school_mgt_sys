@@ -67,8 +67,10 @@ def move_to_payment(
             application.decision_notes = (
                 f"{application.decision_notes}\n[Payment Requested] {notes}".strip()
             )
+        if amount is not None:
+            application.fee_amount = amount
         application.save(
-            update_fields=["status", "reviewed_by", "decision_notes", "updated_at"]
+            update_fields=["status", "reviewed_by", "decision_notes", "fee_amount", "updated_at"]
         )
 
         audit.record(

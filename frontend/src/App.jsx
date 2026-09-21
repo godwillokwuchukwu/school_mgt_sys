@@ -5,6 +5,8 @@ import ActivateFlow from './ActivateFlow'
 import AdmissionsAdmin from './AdmissionsAdmin'
 import UserManagement from './UserManagement'
 import ParentWorkspace from './ParentWorkspace'
+import DataAnalystPortal from './DataAnalystPortal'
+import AdminPortal from './admin/AdminPortal'
 import SchoolCrest from './public/components/SchoolCrest'
 import './index.css'
 
@@ -28,6 +30,7 @@ const teacherNav = [
   ['Students', 'users'],
   ['Assignments', 'file'],
   ['Grades', 'chart'],
+  ['Data Analytics', 'chart'],
   ['Attendance', 'check'],
   ['Timetable', 'book'],
   ['Materials', 'book'],
@@ -50,6 +53,7 @@ const adminNav = [
   ['Calendar', 'book'],
   ['News', 'bell'],
   ['Reports', 'chart'],
+  ['Data Analytics', 'chart'],
   ['Audit Logs', 'file'],
   ['Settings', 'grid'],
 ]
@@ -238,6 +242,21 @@ function App() {
   const isTeacher = role === 'teacher'
   const isParent = role === 'parent'
   const isAdmin = role === 'admin'
+
+  if (isAdmin) {
+    return (
+      <AdminPortal
+        data={data}
+        profile={profile}
+        onLogout={() => {
+          setLoggedIn(false)
+          setRole(null)
+          setProfile(null)
+        }}
+        onSwitchRole={(newRole) => setRole(newRole)}
+      />
+    )
+  }
 
   const nav = isStudent ? studentNav : isTeacher ? teacherNav : isParent ? parentNav : adminNav
   const initials = userName(profile)
@@ -633,6 +652,9 @@ function StaffWorkspace({ active, setActive, _profile, data, role, error }) {
   if (active === 'Notices' || active === 'News') return <AnnouncementManager data={data} onBack={() => setActive('Overview')} />
   if (active === 'Fees' || active === 'Payments') return <FeePage data={data} role={role} onBack={() => setActive('Overview')} />
   if (active === 'Reports') return <StaffReports data={data} setActive={setActive} onBack={() => setActive('Overview')} />
+  if (active === 'Data Analytics' || active === 'Data Science' || active === 'Data Science & Analytics') {
+    return <DataAnalystPortal onBack={() => setActive('Overview')} />
+  }
   if (active !== 'Overview') return <ModulePage module={active} data={data} onBack={() => setActive('Overview')} />
   return <StaffHome role={role} data={data} error={error} go={setActive} />
 }
@@ -680,6 +702,7 @@ function StaffHome({ role, data, error, go }) {
           </div>
           <ActionRow title="Student directory" detail="Search and update student records" action="Open" onClick={() => go('Students')} />
           <ActionRow title="Assignments" detail="Review work and submissions" action="Open" onClick={() => go('Assignments')} />
+          <ActionRow title="Data Science & Analytics" detail="Deep learning models, predictive early warning & descriptive reports" action="Open" onClick={() => go('Data Analytics')} />
         </section>
       </div>
     </>
@@ -1221,7 +1244,16 @@ function FeePage({ data, role, onBack }) {
 function StaffReports({ data, setActive, onBack }) {
   return (
     <>
-      <PageHeader eyebrow="REPORTING" title="School reporting" detail="A clear overview of academic progress, attendance, and published report cards." onBack={onBack} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+        <PageHeader eyebrow="REPORTING & ANALYTICS" title="School reporting" detail="A clear overview of academic progress, attendance, and published report cards." onBack={onBack} />
+        <button
+          className="primary-button"
+          style={{ background: '#0e3d2f', padding: '10px 16px', fontSize: '12px' }}
+          onClick={() => setActive('Data Analytics')}
+        >
+          🚀 Open Data Science & Analytics Portal →
+        </button>
+      </div>
       <div className="stats-grid">
         <Stat icon="chart" label="Published reports" value={data.reports.length || '—'} note="Review archive" onClick={() => window.print()} />
         <Stat icon="check" label="Attendance records" value={data.attendance.length || '—'} note="View register" onClick={() => setActive('Attendance')} />

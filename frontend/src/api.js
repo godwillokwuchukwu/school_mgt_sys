@@ -152,10 +152,21 @@ const api = {
   admissionsApplications: () => request('/admissions/admin/applications/'),
   admissionsApplicationDetail: (id) => request(`/admissions/admin/applications/${id}/`),
   admissionsApprove: (id, amount) => request(`/admissions/admin/applications/${id}/approve/`, { method: 'POST', body: JSON.stringify({ amount }) }),
+  admissionsGenerateInvoice: (id, data) => request(`/admissions/admin/applications/${id}/generate_invoice/`, { method: 'POST', body: JSON.stringify(data) }),
   admissionsDecline: (id, notes) => request(`/admissions/admin/applications/${id}/decline/`, { method: 'POST', body: JSON.stringify({ notes }) }),
   admissionsConfirmPayment: (id, notes) => request(`/admissions/admin/applications/${id}/confirm_payment/`, { method: 'POST', body: JSON.stringify({ notes }) }),
   admissionsOfferAdmission: (id, notes) => request(`/admissions/admin/applications/${id}/offer_admission/`, { method: 'POST', body: JSON.stringify({ notes }) }),
   admissionsEnroll: (id, data) => request(`/admissions/admin/applications/${id}/enroll/`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // Analytics & Data Science
+  analyticsOverview: () => request('/reporting/analytics/overview/'),
+  analyticsDescriptive: () => request('/reporting/analytics/descriptive/'),
+  analyticsDiagnostic: () => request('/reporting/analytics/diagnostic/'),
+  analyticsPredictive: () => request('/reporting/analytics/predictive/'),
+  analyticsPrescriptive: () => request('/reporting/analytics/prescriptive/'),
+  analyticsModels: () => request('/reporting/analytics/models/'),
+  analyticsSimulate: (data) => request('/reporting/analytics/simulate/', { method: 'POST', body: JSON.stringify(data) }),
+  analyticsExportUrl: (type) => `${API_URL}/reporting/analytics/export/?type=${type}`,
 
   deleteStudent: (id) => request(`/students/students/${id}/`, { method: 'DELETE' }),
   async dashboard() {

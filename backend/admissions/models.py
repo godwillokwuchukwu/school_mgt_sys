@@ -75,7 +75,7 @@ class AdmissionApplication(models.Model):
     guardian_email = models.EmailField()
     guardian_address = models.CharField(max_length=255, blank=True)
 
-    # --- Review ---
+    # --- Review & Invoicing ---
     reviewed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -84,6 +84,12 @@ class AdmissionApplication(models.Model):
         related_name="+",
     )
     decision_notes = models.TextField(blank=True)
+    fee_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, help_text="Total admission and tuition fee amount due"
+    )
+    fee_breakdown = models.JSONField(
+        default=dict, blank=True, help_text="Itemized fee breakdown: tuition, development, lab, books, etc."
+    )
 
     submitted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

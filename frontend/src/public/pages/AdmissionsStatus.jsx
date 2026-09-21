@@ -241,11 +241,26 @@ export default function AdmissionsStatus() {
                       <div><span style={{ color: '#6b7280', fontSize: '11px', display: 'block' }}>Bank Name</span><strong>First Bank of Nigeria</strong></div>
                       <div><span style={{ color: '#6b7280', fontSize: '11px', display: 'block' }}>Account Name</span><strong>Riverside Academy Admissions</strong></div>
                       <div><span style={{ color: '#6b7280', fontSize: '11px', display: 'block' }}>Account Number</span><strong style={{ fontSize: '15px', color: '#0e3d2f' }}>1029384756</strong></div>
-                      <div><span style={{ color: '#6b7280', fontSize: '11px', display: 'block' }}>Amount Due</span><strong style={{ fontSize: '15px', color: '#b45309' }}>₦150,000.00</strong></div>
+                      <div><span style={{ color: '#6b7280', fontSize: '11px', display: 'block' }}>Amount Due</span><strong style={{ fontSize: '15px', color: '#b45309' }}>₦{Number(result.data.fee_amount || result.data.amount || 150000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
                       <div style={{ gridColumn: '1 / -1' }}>
                         <span style={{ color: '#6b7280', fontSize: '11px', display: 'block' }}>Payment Narration / Reference</span>
                         <code style={{ background: '#fef3c7', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>{result.data.reference}</code>
                       </div>
+                      {result.data.fee_breakdown && Object.keys(result.data.fee_breakdown).length > 0 && (
+                        <div style={{ gridColumn: '1 / -1', marginTop: '6px', paddingTop: '10px', borderTop: '1px dashed #fde68a' }}>
+                          <span style={{ color: '#6b7280', fontSize: '11px', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            Itemized Fee Breakdown
+                          </span>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
+                            {Object.entries(result.data.fee_breakdown).map(([itemLabel, itemVal]) => (
+                              <div key={itemLabel} style={{ fontSize: '12px', color: '#374151', display: 'flex', justifyContent: 'space-between', paddingRight: '12px' }}>
+                                <span>{itemLabel}:</span>
+                                <strong>₦{Number(itemVal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 

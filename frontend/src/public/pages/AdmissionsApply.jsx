@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { publicApi } from '../api'
-import { ErrorBanner, Loading, PageHero, SuccessBanner } from '../ui'
+import { ErrorBanner, Loading, SuccessBanner } from '../ui'
 import { formatDate } from '../formatters'
 import '../../auth/StudentAuth.css'
 
@@ -939,6 +939,9 @@ function ApplicationDetail({ application, onBack, onUpdated }) {
   const [submitMessage, setSubmitMessage] = useState('')
   const [submitError, setSubmitError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [receiptFile, setReceiptFile] = useState(null)
+  const [uploadingReceipt, setUploadingReceipt] = useState(false)
+  const [receiptUploaded, setReceiptUploaded] = useState(false)
   const editable = current?.status === 'started'
 
   useEffect(() => {
@@ -963,6 +966,22 @@ function ApplicationDetail({ application, onBack, onUpdated }) {
       setSubmitError(err.message || 'Failed to submit application. Please verify all required fields and documents.')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleReceiptUpload = async (e) => {
+    e.preventDefault()
+    if (!receiptFile || !current?.id) return
+    setUploadingReceipt(true)
+    try {
+      const doc = await publicApi.uploadDocument(current.id, 'payment_receipt', receiptFile)
+      setReceiptUploaded(true)
+      setDocuments((prev) => [...prev, doc])
+      setReceiptFile(null)
+    } catch (err) {
+      setSubmitError(err.message || 'Failed to upload payment receipt.')
+    } finally {
+      setUploadingReceipt(false)
     }
   }
 
@@ -998,6 +1017,138 @@ function ApplicationDetail({ application, onBack, onUpdated }) {
           <div className="bfa-form-row" style={{ marginTop: 16 }}>
             <div><strong style={{ color: 'var(--bfa-navy)' }}>Guardian:</strong> {current.guardian_full_name}</div>
             <div><strong style={{ color: 'var(--bfa-navy)' }}>Contact:</strong> {current.guardian_phone} | {current.guardian_email}</div>
+          </div>
+        </div>
+      )}
+
+      {/* EXACT PAYMENT CARD MATCHING media_1789928432260.png */}
+      {current.status === 'payment_pending' && (
+        <div style={{
+          background: '#fffbeb',
+          border: '1.5px solid #fde68a',
+          borderRadius: '8px',
+          padding: '1.75rem',
+          marginBottom: '1.5rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+            <span style={{ fontSize: '24px' }}>💳</span>
+            <strong style={{ fontSize: '16px', color: '#92400e' }}>
+              Documentation Accepted — School Bank Payment Required
+            </strong>
+          </div>
+          
+          <p style={{ fontSize: '13px', color: '#78350f', lineHeight: 1.6, margin: '0 0 14px' }}>
+            Congratulations! Your application and registration documents have been accepted by the Admissions Board.
+            To move forward to the next stage and receive your <strong>Official Admission Offer Letter</strong>, please make payment to the school bank account details below:
+          </p>
+
+          <div style={{
+            background: '#fff',
+            border: '1.5px solid #fcd34d',
+            borderRadius: '8px',
+            padding: '16px',
+            fontSize: '13px',
+            color: '#1f2937',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+              <div><span style={{ color: '#6b7280', fontSize: '11px', display: 'block' }}>Bank Name</span><strong>First Bank of Nigeria</strong></div>
+              <div><span style={{ color: '#6b7280', fontSize: '11px', display: 'block' }}>Account Name</span><strong>Riverside Academy Admissions</strong></div>
+              <div><span style={{ color: '#6b7280', fontSize: '11px', display: 'block' }}>Account Number</span><strong style={{ fontSize: '15px', color: '#0e3d2f' }}>1029384756</strong></div>
+              <div><span style={{ color: '#6b7280', fontSize: '11px', display: 'block' }}>Amount Due</span><strong style={{ fontSize: '15px', color: '#b45309' }}>₦{Number(current.fee_amount || current.amount || 150000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <span style={{ color: '#6b7280', fontSize: '11px', display: 'block' }}>Payment Narration / Reference</span>
+                <code style={{ background: '#fef3c7', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>{current.reference}</code>
+              </div>
+              {current.fee_breakdown && Object.keys(current.fee_breakdown).length > 0 && (
+                <div style={{ gridColumn: '1 / -1', marginTop: '6px', paddingTop: '10px', borderTop: '1px dashed #fde68a' }}>
+                  <span style={{ color: '#6b7280', fontSize: '11px', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Itemized Fee Breakdown
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
+                    {Object.entries(current.fee_breakdown).map(([itemLabel, itemVal]) => (
+                      <div key={itemLabel} style={{ fontSize: '12px', color: '#374151', display: 'flex', justifyContent: 'space-between', paddingRight: '12px' }}>
+                        <span>{itemLabel}:</span>
+                        <strong>₦{Number(itemVal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* UPLOAD RECEIPT / SLIP SECTION */}
+          <div style={{
+            marginTop: '18px',
+            paddingTop: '16px',
+            borderTop: '1px solid #fde68a'
+          }}>
+            <h4 style={{ margin: '0 0 8px', fontSize: '13.5px', color: '#92400e', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>📄</span> Upload Payment Receipt / Bank Transfer Slip
+            </h4>
+            <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#78350f' }}>
+              After making payment, please upload your deposit slip, teller, or mobile transfer receipt so the school administration can verify it against the bank account.
+            </p>
+
+            {receiptUploaded || documents.some(d => d.document_type === 'payment_receipt') ? (
+              <div style={{
+                background: '#f0fdf4',
+                border: '1px solid #86efac',
+                borderRadius: '6px',
+                padding: '12px 14px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '10px'
+              }}>
+                <div>
+                  <strong style={{ color: '#166534', fontSize: '12.5px' }}>✓ Payment Slip Uploaded & Submitted</strong>
+                  <span style={{ display: 'block', fontSize: '11px', color: '#15803d', marginTop: '2px' }}>
+                    The admin has been notified and will confirm your payment shortly.
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleReceiptUpload}
+                style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}
+              >
+                <input
+                  type="file"
+                  required
+                  accept=".pdf,.png,.jpg,.jpeg"
+                  onChange={(e) => setReceiptFile(e.target.files[0])}
+                  style={{
+                    background: '#fff',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    fontSize: '12.5px',
+                    flex: '1',
+                    minWidth: '220px',
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={uploadingReceipt || !receiptFile}
+                  style={{
+                    background: '#0e3d2f',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '9px 18px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: uploadingReceipt || !receiptFile ? 'not-allowed' : 'pointer',
+                    opacity: uploadingReceipt || !receiptFile ? 0.7 : 1,
+                  }}
+                >
+                  {uploadingReceipt ? 'Uploading…' : 'Upload Payment Slip →'}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}
@@ -1090,7 +1241,27 @@ export default function AdmissionsApply({ defaultMode = 'register' }) {
   if (selected) {
     return (
       <>
-        <PageHero crumb="Admissions · Apply" title="Admission Application" detail="Manage your application details and uploaded documents." />
+        <section className="bfa-page-hero hero-admissions-apply">
+          <div className="bfa-container hero-apply-container">
+            <nav aria-label="Breadcrumb" className="bfa-hero-breadcrumb">
+              <Link to="/" className="bfa-hero-crumb-link">Home</Link>
+              <span className="bfa-breadcrumb-sep">/</span>
+              <Link to="/admissions" className="bfa-hero-crumb-link">Admissions</Link>
+              <span className="bfa-breadcrumb-sep">/</span>
+              <button
+                type="button"
+                onClick={() => { setSelected(null); loadApplications() }}
+                className="bfa-hero-crumb-btn"
+              >
+                My Applications
+              </button>
+              <span className="bfa-breadcrumb-sep">/</span>
+              <span className="bfa-breadcrumb-active">Application Form</span>
+            </nav>
+            <h1 className="hero-apply-title">Admission Application</h1>
+            <p className="hero-apply-detail">Manage your application details and uploaded documents.</p>
+          </div>
+        </section>
         <section className="bfa-section">
           <div className="bfa-container">
             <ApplicationDetail
@@ -1106,48 +1277,120 @@ export default function AdmissionsApply({ defaultMode = 'register' }) {
 
   return (
     <>
-      <PageHero crumb="Admissions · Apply" title="My Applications" detail="Start a new admission application, or continue one you have already started." />
+      <section className="bfa-page-hero hero-admissions-apply">
+        <div className="bfa-container hero-apply-container">
+          <nav aria-label="Breadcrumb" className="bfa-hero-breadcrumb">
+            <Link to="/" className="bfa-hero-crumb-link">Home</Link>
+            <span className="bfa-breadcrumb-sep">/</span>
+            <Link to="/admissions" className="bfa-hero-crumb-link">Admissions</Link>
+            <span className="bfa-breadcrumb-sep">/</span>
+            <span className="bfa-breadcrumb-active">Apply</span>
+          </nav>
+          <h1 className="hero-apply-title">My Applications</h1>
+          <p className="hero-apply-detail">Start a new admission application, or continue one you have already started.</p>
+        </div>
+      </section>
+
       <section className="bfa-section">
         <div className="bfa-container" style={{ maxWidth: 840 }}>
           <ErrorBanner message={error} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-            <button
-              className="bfa-btn bfa-btn-gold"
-              onClick={() => setSelected({ ...EMPTY_APPLICATION, ...(initialProfile || {}), status: 'started', documents: [] })}
-            >
-              + Start a New Application
-            </button>
-            <button
-              className="bfa-btn bfa-btn-outline"
-              onClick={() => {
-                publicApi.logout()
-                setSignedIn(false)
-              }}
-            >
-              Sign Out
-            </button>
-          </div>
-          {applications === null ? (
-            <Loading />
-          ) : applications.length === 0 ? (
-            <div className="bfa-card" style={{ textAlign: 'center', padding: '48px 24px' }}>
-              <h3 style={{ color: 'var(--bfa-navy)', fontSize: 20 }}>No Active Applications</h3>
-              <p style={{ color: 'var(--bfa-muted)', margin: '8px 0 20px' }}>
-                You have not started an application yet. Click below to begin your child's enrollment application.
-              </p>
+
+          {/* Top Session & Action Bar */}
+          {applications && applications.length > 0 ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
               <button
                 className="bfa-btn bfa-btn-gold"
                 onClick={() => setSelected({ ...EMPTY_APPLICATION, ...(initialProfile || {}), status: 'started', documents: [] })}
               >
-                + Start an Application
+                + Start a New Application
               </button>
+              <button
+                className="ra-signout-btn"
+                onClick={() => {
+                  publicApi.logout()
+                  setSignedIn(false)
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>Sign Out</span>
+              </button>
+            </div>
+          ) : applications && applications.length === 0 ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+              <div className="ra-applicant-session-pill">
+                <span className="ra-session-dot" />
+                <span>Admissions Portal &nbsp;•&nbsp; Active Session</span>
+              </div>
+              <button
+                className="ra-signout-btn"
+                onClick={() => {
+                  publicApi.logout()
+                  setSignedIn(false)
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>Sign Out</span>
+              </button>
+            </div>
+          ) : null}
+
+          {applications === null ? (
+            <Loading />
+          ) : applications.length === 0 ? (
+            <div className="ra-empty-app-card">
+              <div className="ra-empty-app-icon-wrap">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+              </div>
+              <h3 className="ra-empty-app-title">No Active Applications</h3>
+              <p className="ra-empty-app-desc">
+                You have not started an application yet. Click below to begin your child's enrollment application.
+              </p>
+              <button
+                className="bfa-btn bfa-btn-gold ra-empty-app-btn"
+                onClick={() => setSelected({ ...EMPTY_APPLICATION, ...(initialProfile || {}), status: 'started', documents: [] })}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span>Start an Application</span>
+              </button>
+
+              <div className="ra-empty-features-row">
+                <div className="ra-empty-feature-item">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                  <span>10–15 Minutes</span>
+                </div>
+                <div className="ra-empty-feature-item">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
+                  <span>Auto-Save Progress</span>
+                </div>
+                <div className="ra-empty-feature-item">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                  <span>Upload Documents</span>
+                </div>
+              </div>
             </div>
           ) : (
             (Array.isArray(applications) ? applications : []).map((app) => (
               <div
                 className="bfa-card"
                 key={app.id}
-                style={{ cursor: 'pointer', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                style={{ cursor: 'pointer', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s', padding: '20px 24px' }}
                 onClick={() => publicApi.application(app.id).then(setSelected)}
               >
                 <div>
@@ -1158,9 +1401,12 @@ export default function AdmissionsApply({ defaultMode = 'register' }) {
                     Class: <strong>{app.class_applying_for}</strong> | Session: <strong>{app.academic_session}</strong>
                   </p>
                 </div>
-                <span className="bfa-badge bfa-badge-gold" style={{ textTransform: 'capitalize', fontSize: 12 }}>
-                  {app.status ? app.status.replace(/_/g, ' ') : 'Draft'}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span className="bfa-badge bfa-badge-gold" style={{ textTransform: 'capitalize', fontSize: 12 }}>
+                    {app.status ? app.status.replace(/_/g, ' ') : 'Draft'}
+                  </span>
+                  <span style={{ color: 'var(--bfa-gold)', fontWeight: 600, fontSize: 13 }}>Continue →</span>
+                </div>
               </div>
             ))
           )}

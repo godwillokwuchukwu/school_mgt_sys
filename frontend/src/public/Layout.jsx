@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { publicApi } from './api'
 import SchoolCrest from './components/SchoolCrest'
 import './theme.css'
@@ -139,21 +139,10 @@ function Footer({ school }) {
 
 export default function PublicLayout() {
   const [school, setSchool] = useState(null)
-  const location = useLocation()
 
   useEffect(() => {
     publicApi.school().then(setSchool).catch(() => setSchool(null))
   }, [])
-
-  const isAdmissionsAuth =
-    (location.pathname === '/admissions/apply' ||
-      location.pathname === '/admissions/register' ||
-      location.pathname === '/admissions/login') &&
-    !publicApi.isAuthenticated()
-
-  if (isAdmissionsAuth) {
-    return <Outlet context={{ school }} />
-  }
 
   return (
     <div className="bfa-public">
