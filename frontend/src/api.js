@@ -103,6 +103,9 @@ const api = {
   confirmPasswordReset: (body) => request('/auth/password-reset/confirm/', { method: 'POST', body: JSON.stringify(body) }, false),
   profile: () => request('/accounts/profiles/me/'),
   updateProfile: (body) => request('/accounts/profiles/me/', { method: 'PATCH', body: JSON.stringify(body) }),
+  getSettings: () => request('/core/admin/settings/'),
+  updateSettings: (data) => request('/core/admin/settings/', { method: 'POST', body: JSON.stringify(data) }),
+  createBackup: () => request('/core/admin/settings/backup/', { method: 'POST', body: JSON.stringify({}) }),
   subjects: (query = '') => request(`/academics/subjects/${query}`),
   classes: (query = '') => request(`/academics/classes/${query}`),
   enrollments: (query = '') => request(`/academics/enrollments/${query}`),
@@ -157,6 +160,13 @@ const api = {
   admissionsConfirmPayment: (id, notes) => request(`/admissions/admin/applications/${id}/confirm_payment/`, { method: 'POST', body: JSON.stringify({ notes }) }),
   admissionsOfferAdmission: (id, notes) => request(`/admissions/admin/applications/${id}/offer_admission/`, { method: 'POST', body: JSON.stringify({ notes }) }),
   admissionsEnroll: (id, data) => request(`/admissions/admin/applications/${id}/enroll/`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // Administration Modules Helpers
+  adminUpdateCandidateStatus: (id, status) => request(`/core/admin/candidates/${id}/status/`, { method: 'POST', body: JSON.stringify({ status }) }),
+  adminCreateVacancy: (data) => request('/core/admin/vacancies/create/', { method: 'POST', body: JSON.stringify(data) }),
+  adminCreateParent: (data) => request('/core/admin/parents/create/', { method: 'POST', body: JSON.stringify(data) }),
+  adminCreateStaff: (data) => request('/core/admin/staff/create/', { method: 'POST', body: JSON.stringify(data) }),
+  adminCreateClass: (data) => request('/core/admin/classes/create/', { method: 'POST', body: JSON.stringify(data) }),
 
   // Analytics & Data Science
   analyticsOverview: () => request('/reporting/analytics/overview/'),

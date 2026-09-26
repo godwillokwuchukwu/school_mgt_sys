@@ -18,6 +18,8 @@ class SchoolProfileSerializer(serializers.ModelSerializer):
     years_of_excellence = serializers.ReadOnlyField()
     total_students = serializers.SerializerMethodField()
     total_teachers = serializers.SerializerMethodField()
+    logo_data = serializers.SerializerMethodField()
+    school_logo = serializers.SerializerMethodField()
 
     class Meta:
         model = SchoolProfile
@@ -45,6 +47,10 @@ class SchoolProfileSerializer(serializers.ModelSerializer):
             "twitter_url",
             "instagram_url",
             "linkedin_url",
+            "logo_data",
+            "school_logo",
+            "theme_palette",
+            "public_layout_config",
         ]
 
     def get_total_students(self, obj):
@@ -54,6 +60,14 @@ class SchoolProfileSerializer(serializers.ModelSerializer):
     def get_total_teachers(self, obj):
         from accounts.models import Profile, Role
         return Profile.objects.filter(role=Role.TEACHER).count()
+
+    def get_logo_data(self, obj):
+        from core.models import SystemSetting
+        return SystemSetting.get_settings().logo_data or ""
+
+    def get_school_logo(self, obj):
+        from core.models import SystemSetting
+        return SystemSetting.get_settings().logo_data or ""
 
 
 class NewsArticleListSerializer(serializers.ModelSerializer):

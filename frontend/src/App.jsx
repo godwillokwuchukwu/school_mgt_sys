@@ -195,6 +195,41 @@ function App() {
   const [error, setError] = useState('')
   const [authMode] = useState('login')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [schoolBrandName, setSchoolBrandName] = useState(() => {
+    try {
+      return localStorage.getItem('riverside_school_name') || 'Riverside Academy'
+    } catch {
+      return 'Riverside Academy'
+    }
+  })
+
+  // Sync school branding dynamically with settings changes and public school endpoint
+  useEffect(() => {
+    fetch('/api/public/school/')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => {
+        if (d?.name) {
+          setSchoolBrandName(d.name)
+          try {
+            localStorage.setItem('riverside_school_name', d.name)
+            if (d.logo_data || d.school_logo) {
+              localStorage.setItem('riverside_school_logo', d.logo_data || d.school_logo)
+              window.dispatchEvent(new Event('school-settings-updated'))
+            }
+          } catch {}
+        }
+      })
+      .catch(() => {})
+
+    const handleUpdate = () => {
+      try {
+        const name = localStorage.getItem('riverside_school_name')
+        if (name) setSchoolBrandName(name)
+      } catch {}
+    }
+    window.addEventListener('school-settings-updated', handleUpdate)
+    return () => window.removeEventListener('school-settings-updated', handleUpdate)
+  }, [])
 
   useEffect(() => {
     if (!loggedIn) return
@@ -209,8 +244,8 @@ function App() {
   }, [loggedIn])
 
   useEffect(() => {
-    if (loggedIn) document.title = `${timeGreeting()}, ${userName(profile)} · Riverside Academy`
-  }, [loggedIn, profile])
+    if (loggedIn) document.title = `${timeGreeting()}, ${userName(profile)} · ${schoolBrandName}`
+  }, [loggedIn, profile, schoolBrandName])
 
   if (!loggedIn) {
     const params = new URLSearchParams(window.location.search)
@@ -272,14 +307,14 @@ function App() {
       <aside className={mobileNavOpen ? 'sidebar mobile-open' : 'sidebar'}>
         <div className="brand">
           <SchoolCrest size={28} variant="gold" />
-          <span>Riverside Academy</span>
+          <span>{schoolBrandName}</span>
           <button className="mobile-close" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)}>
             <Icon name="close" />
           </button>
         </div>
         <div className="school-switcher">
           <span className="school-dot" />
-          <span>Riverside Academy</span>
+          <span>{schoolBrandName}</span>
           <b>⌄</b>
         </div>
         <p className="nav-label">{role.toUpperCase()} WORKSPACE</p>
@@ -684,7 +719,7 @@ function StaffHome({ role, data, error, go }) {
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <h2>Today at Riverside</h2>
+              <h2>Today at {schoolBrandName}</h2>
               <p className="panel-subtitle">The operational pulse of your school</p>
             </div>
             <button className="text-button" onClick={() => go('Attendance')}>

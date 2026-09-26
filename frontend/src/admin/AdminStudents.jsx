@@ -249,7 +249,6 @@ export function AdminStudents({
     setLocalStudents((prev) => [newStudent, ...prev])
     if (onAddStudent) onAddStudent(newStudent)
 
-    // 2. Background API call
     try {
       await fetch('/api/students/students/', {
         method: 'POST',
@@ -262,9 +261,22 @@ export function AdminStudents({
           phone: newStudentForm.guardianPhone,
         }),
       })
+
+      await fetch('/api/core/admin/log-activity/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'student.registered',
+          model_name: 'Student',
+          object_id: generatedId,
+          description: `Student ${fullName} (${generatedId}) enrolled in cohort ${newStudentForm.class}.`,
+        }),
+      })
     } catch (err) {
       console.warn('API sync warning:', err)
     }
+
+    window.dispatchEvent(new CustomEvent('admin-refresh-data'))
 
     setAddLoading(false)
     setSuccessToast(`Student ${fullName} (${generatedId}) added successfully!`)
@@ -303,45 +315,21 @@ export function AdminStudents({
 
   return (
     <div className="admin-page-content">
-      {/* 1. Page Header (media_1789920743370.png) */}
+      {/* 1. Page Header */}
       <div className="admin-page-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 10,
-              background: '#ecfdf5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#10b981',
-            }}
-          >
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="admin-page-title">Students</h1>
-            <p className="admin-page-subtitle">
-              Manage student records, track attendance, fees and academic progress.
-            </p>
-          </div>
+        <div>
+          <h1 className="admin-page-title">Students</h1>
+          <p className="admin-page-subtitle">
+            Manage student records, track attendance, fees and academic progress.
+          </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button className="admin-btn-outline" onClick={() => alert('Import feature: CSV/Excel format')}>
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
             <span>Import</span>
           </button>
 
           <button className="admin-btn-outline" onClick={exportCSV}>
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
             <span>Export</span>
           </button>
 
@@ -449,7 +437,9 @@ export function AdminStudents({
             </div>
             <span className="admin-kpi-title">New This Term</span>
           </div>
-          <div className="admin-kpi-number">18</div>
+          <div className="admin-kpi-number">
+            {localStudents.filter((s) => (s.enrolled_on && (s.enrolled_on.includes('2024') || s.enrolled_on.includes('2026'))) || s.num <= 5).length}
+          </div>
           <div className="admin-kpi-trend up">
             <span>↑ 5%</span>
             <span style={{ color: '#94a3b8', fontWeight: 400 }}>from last term</span>
@@ -466,10 +456,12 @@ export function AdminStudents({
             </div>
             <span className="admin-kpi-title">Pending Admission</span>
           </div>
-          <div className="admin-kpi-number">7</div>
+          <div className="admin-kpi-number">
+            {localStudents.filter((s) => s.status === 'Pending').length}
+          </div>
           <div className="admin-kpi-trend down">
-            <span>↓ 2%</span>
-            <span style={{ color: '#94a3b8', fontWeight: 400 }}>from last term</span>
+            <span>● Review</span>
+            <span style={{ color: '#94a3b8', fontWeight: 400 }}>in queue</span>
           </div>
         </div>
       </div>

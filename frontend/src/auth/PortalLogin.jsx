@@ -34,11 +34,13 @@ export default function PortalLogin({ initialMode = 'login', onAuthenticated }) 
     }
   }
 
+  const schoolName = (typeof window !== 'undefined' ? localStorage.getItem('riverside_school_name') : null) || 'Riverside Academy'
+
   return (
     <main className="auth-page">
       <div className="auth-brand">
         <SchoolCrest size={36} variant="gold" />
-        <span>Riverside Academy</span>
+        <span>{schoolName}</span>
       </div>
       <div className="auth-card">
         <Link className="text-button" to="/" style={{ display: 'inline-block', marginBottom: 14 }}>← Back to school website</Link>

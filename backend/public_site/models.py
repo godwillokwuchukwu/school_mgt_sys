@@ -40,6 +40,8 @@ class SchoolProfile(models.Model):
     twitter_url = models.URLField(blank=True)
     instagram_url = models.URLField(blank=True)
     linkedin_url = models.URLField(blank=True)
+    theme_palette = models.CharField(max_length=50, default="emerald_gold")
+    public_layout_config = models.JSONField(default=dict, blank=True)
 
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -263,6 +265,8 @@ class JobApplication(models.Model):
         SUBMITTED = "submitted", "Submitted"
         REVIEWED = "reviewed", "Reviewed"
         SHORTLISTED = "shortlisted", "Shortlisted"
+        INTERVIEW = "interview", "Interview"
+        HIRED = "hired", "Hired"
         REJECTED = "rejected", "Rejected"
 
     reference = models.CharField(max_length=20, unique=True, editable=False)

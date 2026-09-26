@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { publicApi } from './api'
 import SchoolCrest from './components/SchoolCrest'
+import { applyThemePalette } from './themePalettes'
 import './theme.css'
 
 const NAV_LINKS = [
@@ -40,8 +41,22 @@ function SocialIcons({ school }) {
 
 function Header({ school }) {
   const [open, setOpen] = useState(false)
-  const phone = school?.phone || '+1 555 014 2026'
-  const email = school?.email || 'hello@riversideacademy.edu'
+  const phone =
+    school?.phone ||
+    (typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('riverside_school_settings') || '{}')?.phone
+      : null) ||
+    '+234 803 123 4567'
+  const email =
+    school?.email ||
+    (typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('riverside_school_settings') || '{}')?.email
+      : null) ||
+    'info@riversideacademy.ng'
+  const schoolName =
+    school?.name ||
+    (typeof window !== 'undefined' ? localStorage.getItem('riverside_school_name') : null) ||
+    'Riverside Academy'
 
   return (
     <>
@@ -62,8 +77,8 @@ function Header({ school }) {
       <header className="bfa-header">
         <div className="bfa-container">
           <Link to="/" className="bfa-brand">
-            <SchoolCrest size={38} />
-            <span>{school?.name || 'Riverside Academy'}</span>
+            <SchoolCrest size={38} logo={school?.logo_data || school?.school_logo} />
+            <span>{schoolName}</span>
           </Link>
           <nav className={open ? 'bfa-nav open' : 'bfa-nav'}>
             {NAV_LINKS.map(([label, to]) => (
@@ -87,11 +102,35 @@ function Header({ school }) {
 }
 
 function Footer({ school }) {
-  const name = school?.name || 'Riverside Academy'
-  const tagline = school?.tagline || 'Learning with purpose'
-  const email = school?.email || 'hello@riversideacademy.edu'
-  const phone = school?.phone || '+1 555 014 2026'
-  const officeHours = school?.office_hours || 'Mon–Fri · 8am–4pm'
+  const name =
+    school?.name ||
+    (typeof window !== 'undefined' ? localStorage.getItem('riverside_school_name') : null) ||
+    'Riverside Academy'
+  const tagline =
+    school?.tagline ||
+    (typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('riverside_school_settings') || '{}')?.motto
+      : null) ||
+    'Knowledge, Character, Excellence'
+  const email =
+    school?.email ||
+    (typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('riverside_school_settings') || '{}')?.email
+      : null) ||
+    'info@riversideacademy.ng'
+  const phone =
+    school?.phone ||
+    (typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('riverside_school_settings') || '{}')?.phone
+      : null) ||
+    '+234 803 123 4567'
+  const address =
+    school?.address ||
+    (typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('riverside_school_settings') || '{}')?.address
+      : null) ||
+    '12, Riverside Road, Lagos'
+  const officeHours = school?.office_hours || 'Mon–Fri · 8:00 AM – 4:00 PM'
 
   return (
     <footer className="bfa-footer">
@@ -99,10 +138,10 @@ function Footer({ school }) {
         <div className="bfa-grid bfa-grid-4">
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <SchoolCrest size={34} variant="gold" />
+              <SchoolCrest size={34} variant="gold" logo={school?.logo_data || school?.school_logo} />
               <h5 style={{ margin: 0, fontSize: 16 }}>{name}</h5>
             </div>
-            <p>{tagline} , a warm ambitious school community preparing students for a changing world.</p>
+            <p>{tagline} — an ambitious academic community preparing students for a changing world.</p>
             <SocialIcons school={school} />
           </div>
           <div>
@@ -121,11 +160,11 @@ function Footer({ school }) {
             <Link to="/terms">Terms of Use</Link>
           </div>
           <div>
-            <h5>Visit</h5>
+            <h5>Visit & Contact</h5>
             <p>{email}</p>
             <p>{phone}</p>
             <p>{officeHours}</p>
-            {school?.address && <p>{school.address}</p>}
+            <p>{address}</p>
           </div>
         </div>
         <div className="bfa-footer-bottom">
@@ -140,8 +179,50 @@ function Footer({ school }) {
 export default function PublicLayout() {
   const [school, setSchool] = useState(null)
 
+  const loadSchool = () => {
+    publicApi
+      .school()
+      .then((data) => {
+        setSchool(data)
+        if (data?.theme_palette) {
+          applyThemePalette(data.theme_palette)
+          try {
+            localStorage.setItem('riverside_theme_palette', data.theme_palette)
+          } catch {}
+        }
+        if (data?.name) {
+          try {
+            localStorage.setItem('riverside_school_name', data.name)
+          } catch {}
+        }
+        if (data?.logo_data || data?.school_logo) {
+          try {
+            localStorage.setItem('riverside_school_logo', data.logo_data || data.school_logo)
+          } catch {}
+        }
+      })
+      .catch(() => setSchool(null))
+  }
+
   useEffect(() => {
-    publicApi.school().then(setSchool).catch(() => setSchool(null))
+    // Apply cached theme immediately to prevent any flicker of default styling
+    const cachedTheme = typeof window !== 'undefined' ? localStorage.getItem('riverside_theme_palette') : null
+    if (cachedTheme) {
+      applyThemePalette(cachedTheme)
+    }
+
+    loadSchool()
+
+    const handleSettingsUpdated = () => {
+      const updatedTheme = localStorage.getItem('riverside_theme_palette')
+      if (updatedTheme) {
+        applyThemePalette(updatedTheme)
+      }
+      loadSchool()
+    }
+
+    window.addEventListener('school-settings-updated', handleSettingsUpdated)
+    return () => window.removeEventListener('school-settings-updated', handleSettingsUpdated)
   }, [])
 
   return (

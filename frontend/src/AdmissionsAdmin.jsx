@@ -95,6 +95,7 @@ export default function AdmissionsAdmin({ onBack }) {
       setSelectedApp(updated);
       alert("Application approved! Status moved to Payment Pending.");
       fetchApplications();
+      window.dispatchEvent(new CustomEvent('admin-refresh-data'));
     } catch (err) {
       alert(`Error: ${err.message}`);
     } finally {
@@ -113,6 +114,7 @@ export default function AdmissionsAdmin({ onBack }) {
       setSelectedApp(updated);
       alert("Admission declined. Process ended.");
       fetchApplications();
+      window.dispatchEvent(new CustomEvent('admin-refresh-data'));
     } catch (err) {
       alert(`Error: ${err.message}`);
     } finally {
@@ -128,6 +130,7 @@ export default function AdmissionsAdmin({ onBack }) {
       setSelectedApp(updated);
       alert("Payment confirmed! You can now issue the Official Admission Offer Letter.");
       fetchApplications();
+      window.dispatchEvent(new CustomEvent('admin-refresh-data'));
     } catch (err) {
       alert(`Error: ${err.message}`);
     } finally {
@@ -143,6 +146,7 @@ export default function AdmissionsAdmin({ onBack }) {
       setSelectedApp(updated);
       alert("Official Admission Offer Letter issued! The applicant can now view it on the portal.");
       fetchApplications();
+      window.dispatchEvent(new CustomEvent('admin-refresh-data'));
     } catch (err) {
       alert(`Error: ${err.message}`);
     } finally {
@@ -182,6 +186,7 @@ export default function AdmissionsAdmin({ onBack }) {
       }
       setCredentialsModal(result);
       fetchApplications();
+      window.dispatchEvent(new CustomEvent('admin-refresh-data'));
     } catch (err) {
       alert(`Enrollment Error: ${err.message}`);
     } finally {
@@ -212,18 +217,151 @@ export default function AdmissionsAdmin({ onBack }) {
   });
 
   return (
-    <>
-      <div className="content-heading">
+    <div className="admin-page-content">
+      {/* 1. Page Header */}
+      <div className="admin-page-header">
         <div>
-          <p className="eyebrow">ADMINISTRATION</p>
-          <h1>Admissions Management</h1>
-          <p className="muted">Review registration documents, approve applications, confirm payments, and provision student & parent portal logins.</p>
+          <h1 className="admin-page-title">Admissions</h1>
+          <p className="admin-page-subtitle">Manage applications, review candidates and track the admission process.</p>
         </div>
-        {onBack && (
-          <button className="secondary-button" onClick={onBack}>
-            ← Overview
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <a
+            href="/admissions/apply"
+            target="_blank"
+            rel="noreferrer"
+            className="admin-btn admin-btn-primary"
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            New Application
+          </a>
+        </div>
+      </div>
+
+      {/* 2. 6 Live Admissions Pipeline KPI Cards */}
+      <div className="admin-kpi-grid cols-6">
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-top">
+            <div className="admin-kpi-icon-wrap blue">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <span className="admin-kpi-badge green">Live DB</span>
+          </div>
+          <div>
+            <div className="admin-kpi-label">Total Applications</div>
+            <div className="admin-kpi-val">{applications.length}</div>
+          </div>
+          <div className="admin-kpi-sub">
+            <span className="admin-kpi-trend up">● Active</span>
+            <span>All active cohorts</span>
+          </div>
+        </div>
+
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-top">
+            <div className="admin-kpi-icon-wrap amber">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span className="admin-kpi-badge amber">Screening</span>
+          </div>
+          <div>
+            <div className="admin-kpi-label">Under Review</div>
+            <div className="admin-kpi-val">
+              {applications.filter((a) => ['submitted', 'under_review', 'documents_pending'].includes(a.status)).length}
+            </div>
+          </div>
+          <div className="admin-kpi-sub">
+            <span className="admin-kpi-trend neutral">● Verification</span>
+            <span>Pending document check</span>
+          </div>
+        </div>
+
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-top">
+            <div className="admin-kpi-icon-wrap cyan">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <span className="admin-kpi-badge blue">Assessment</span>
+          </div>
+          <div>
+            <div className="admin-kpi-label">Exam / Interview</div>
+            <div className="admin-kpi-val">
+              {applications.filter((a) => a.entrance_score != null || a.interview_notes != null).length || 0}
+            </div>
+          </div>
+          <div className="admin-kpi-sub">
+            <span className="admin-kpi-trend up">● Scheduled</span>
+            <span>Academic evaluation</span>
+          </div>
+        </div>
+
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-top">
+            <div className="admin-kpi-icon-wrap red">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <span className="admin-kpi-badge red">Invoices</span>
+          </div>
+          <div>
+            <div className="admin-kpi-label">Fee Pending</div>
+            <div className="admin-kpi-val">
+              {applications.filter((a) => a.status === 'payment_pending').length}
+            </div>
+          </div>
+          <div className="admin-kpi-sub">
+            <span className="admin-kpi-trend down">● Outstanding</span>
+            <span>Awaiting bank transfer</span>
+          </div>
+        </div>
+
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-top">
+            <div className="admin-kpi-icon-wrap purple">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <span className="admin-kpi-badge purple">Accepted</span>
+          </div>
+          <div>
+            <div className="admin-kpi-label">Offer Issued</div>
+            <div className="admin-kpi-val">
+              {applications.filter((a) => a.status === 'admission_offered').length}
+            </div>
+          </div>
+          <div className="admin-kpi-sub">
+            <span className="admin-kpi-trend up">● Issued</span>
+            <span>Offer letters generated</span>
+          </div>
+        </div>
+
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-top">
+            <div className="admin-kpi-icon-wrap green">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span className="admin-kpi-badge green">Provisioned</span>
+          </div>
+          <div>
+            <div className="admin-kpi-label">Enrolled</div>
+            <div className="admin-kpi-val">
+              {applications.filter((a) => a.status === 'enrolled').length}
+            </div>
+          </div>
+          <div className="admin-kpi-sub">
+            <span className="admin-kpi-trend up">● Onboarded</span>
+            <span>Active student logins</span>
+          </div>
+        </div>
       </div>
 
       {/* Filter Tabs & Search */}
@@ -943,6 +1081,6 @@ export default function AdmissionsAdmin({ onBack }) {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

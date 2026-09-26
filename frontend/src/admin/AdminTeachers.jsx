@@ -392,9 +392,22 @@ export function AdminTeachers({
           role: 'teacher',
         }),
       })
+
+      await fetch('/api/core/admin/log-activity/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'teacher.registered',
+          model_name: 'Teacher',
+          object_id: empId,
+          description: `Teacher ${fullName} (${empId}) registered in ${newTeacherForm.department} (${newTeacherForm.subject}).`,
+        }),
+      })
     } catch (err) {
       console.warn('API sync warning:', err)
     }
+
+    window.dispatchEvent(new CustomEvent('admin-refresh-data'))
 
     setAddLoading(false)
     setSuccessToast(`Teacher ${fullName} (${empId}) added successfully!`)
@@ -468,14 +481,16 @@ export function AdminTeachers({
         <div className="admin-kpi-box">
           <div className="admin-kpi-top">
             <div className="admin-kpi-icon-box attendance">
-              <span style={{ fontWeight: 800, fontSize: 13, color: '#d97706' }}>T</span>
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
             <span className="admin-kpi-title">On Leave</span>
           </div>
           <div className="admin-kpi-number">{localTeachers.filter((t) => t.status === 'On Leave').length}</div>
           <div className="admin-kpi-trend down">
-            <span>↓ 25%</span>
-            <span style={{ color: '#94a3b8', fontWeight: 400 }}>vs last term</span>
+            <span>● Permitted</span>
+            <span style={{ color: '#94a3b8', fontWeight: 400 }}>approved leaves</span>
           </div>
         </div>
 
@@ -489,10 +504,12 @@ export function AdminTeachers({
             </div>
             <span className="admin-kpi-title">New This Term</span>
           </div>
-          <div className="admin-kpi-number">4</div>
+          <div className="admin-kpi-number">
+            {localTeachers.filter((t) => (t.joined && (t.joined.includes('Just joined') || t.joined.includes('1 year') || t.joined.includes('2024') || t.joined.includes('2026'))) || t.num <= 2).length}
+          </div>
           <div className="admin-kpi-trend up">
-            <span>↑ 33%</span>
-            <span style={{ color: '#94a3b8', fontWeight: 400 }}>vs last term</span>
+            <span>↑ Active</span>
+            <span style={{ color: '#94a3b8', fontWeight: 400 }}>recently inducted</span>
           </div>
         </div>
       </div>

@@ -24,7 +24,7 @@ body { margin:0; min-width:320px; }
 .reset-notice { margin:20px 0; padding:13px; border:1px solid #bcebd9; border-radius:5px; background:#effbf6; color:#167354; font-size:11px; line-height:1.5; }
 button,input,select { font:inherit; }
 button { border:0; cursor:pointer; }
-svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+svg:not(.admin-chart-canvas):not(.admin-donut-canvas):not(.admin-donut-canvas-130):not(.admin-analytics-chart-svg):not(.admin-analytics-donut-svg):not([data-chart]) { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 .app-shell { display:flex; min-height:100vh; }
 .sidebar { width:248px; flex:0 0 248px; background:var(--navy); color:#c7d2e2; padding:27px 16px 18px; display:flex; flex-direction:column; }
 .brand,.auth-brand { display:flex; align-items:center; gap:10px; font-size:20px; font-weight:800; color:#fff; letter-spacing:-.5px; }

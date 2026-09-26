@@ -12,20 +12,33 @@ import {
   AdminAttendance,
   AdminGrades,
   AdminFees,
+  AdminPayroll,
+  AdminExpenses,
   AdminTimetable,
   AdminCalendar,
   AdminNews,
   AdminReports,
+  AdminAnalyticsDashboard,
   AdminAuditLogs,
   AdminSettings,
 } from './AdminModules'
 import AdmissionsAdmin from '../AdmissionsAdmin'
 import DataAnalystPortal from '../DataAnalystPortal'
 import { AdminAIAssistant } from './AdminAIAssistant'
+import { useLiveDateTime } from './adminDateUtils'
 
 export default function AdminPortal({ onLogout }) {
+  const { liveDateTime, longDate } = useLiveDateTime()
   const [activeModule, setActiveModule] = useState('Overview')
   const [dashboardData, setDashboardData] = useState(null)
+  const [portalSettings, setPortalSettings] = useState(() => {
+    try {
+      const cached = localStorage.getItem('riverside_school_settings')
+      return cached ? JSON.parse(cached) : null
+    } catch {
+      return null
+    }
+  })
   const [loading, setLoading] = useState(true)
 
   // Search state
@@ -49,8 +62,9 @@ export default function AdminPortal({ onLogout }) {
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false)
   const [isAddTeacherOpen, setIsAddTeacherOpen] = useState(false)
 
-  // Fetch real data from the database
-  useEffect(() => {
+  // Fetch real data from the database with live automatic sync
+  const fetchDashboardData = React.useCallback((isBackground = false) => {
+    if (!isBackground) setLoading(true)
     fetch('/api/core/admin/dashboard/')
       .then((res) => {
         if (!res.ok) throw new Error('Network response was not ok')
@@ -58,13 +72,100 @@ export default function AdminPortal({ onLogout }) {
       })
       .then((data) => {
         setDashboardData(data)
-        setLoading(false)
+        if (data?.settings) {
+          setPortalSettings(data.settings)
+          try {
+            localStorage.setItem('riverside_school_settings', JSON.stringify(data.settings))
+            const sName = data.settings.school_name || data.settings.school_form?.schoolName
+            if (sName) localStorage.setItem('riverside_school_name', sName)
+            const sLogo = data.settings.logo_data || data.settings.school_logo || data.settings.school_form?.logo
+            if (sLogo) localStorage.setItem('riverside_school_logo', sLogo)
+          } catch {}
+        }
+        if (!isBackground) setLoading(false)
       })
       .catch((err) => {
         console.warn('Using database fallback cache:', err)
-        setLoading(false)
+        if (!isBackground) setLoading(false)
       })
   }, [])
+
+  useEffect(() => {
+    fetchDashboardData()
+
+    const handleDataRefresh = () => {
+      fetchDashboardData(true)
+    }
+
+    const handleSettingsUpdate = () => {
+      try {
+        const cached = localStorage.getItem('riverside_school_settings')
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          setPortalSettings(parsed)
+          setDashboardData((prev) => (prev ? { ...prev, settings: parsed } : prev))
+        }
+      } catch {}
+    }
+
+    window.addEventListener('school-settings-updated', handleSettingsUpdate)
+    window.addEventListener('admin-refresh-data', handleDataRefresh)
+    window.addEventListener('admin-activity-occurred', handleDataRefresh)
+
+    // Immediate card automation: periodic live background sync every 8 seconds
+    const pollInterval = setInterval(() => {
+      fetchDashboardData(true)
+    }, 8000)
+
+    return () => {
+      window.removeEventListener('school-settings-updated', handleSettingsUpdate)
+      window.removeEventListener('admin-refresh-data', handleDataRefresh)
+      window.removeEventListener('admin-activity-occurred', handleDataRefresh)
+      clearInterval(pollInterval)
+    }
+  }, [fetchDashboardData])
+
+  const handleSaveSettings = (newSettings) => {
+    setPortalSettings(newSettings)
+    setDashboardData((prev) => (prev ? { ...prev, settings: newSettings } : prev))
+    try {
+      localStorage.setItem('riverside_school_settings', JSON.stringify(newSettings))
+      const sName = newSettings.school_name || newSettings.school_form?.schoolName
+      if (sName) {
+        localStorage.setItem('riverside_school_name', sName)
+        document.title = `${sName} — Administration Portal`
+      }
+      const sLogo = newSettings.logo_data || newSettings.school_logo || newSettings.school_form?.logo
+      if (sLogo) {
+        localStorage.setItem('riverside_school_logo', sLogo)
+      }
+      window.dispatchEvent(new Event('school-settings-updated'))
+    } catch {}
+  }
+
+  const currentSchoolName =
+    portalSettings?.school_name ||
+    portalSettings?.school_form?.schoolName ||
+    (typeof window !== 'undefined' ? localStorage.getItem('riverside_school_name') : null) ||
+    'Riverside Academy'
+
+  const currentSchoolLogo =
+    portalSettings?.logo_data ||
+    portalSettings?.school_logo ||
+    portalSettings?.school_form?.logo ||
+    (typeof window !== 'undefined' ? localStorage.getItem('riverside_school_logo') : null) ||
+    null
+
+  const currentSchoolMotto =
+    portalSettings?.motto ||
+    portalSettings?.school_form?.motto ||
+    'Knowledge, Character, Excellence'
+
+  useEffect(() => {
+    if (currentSchoolName) {
+      document.title = `${currentSchoolName} — Administration Portal`
+    }
+  }, [currentSchoolName])
 
   // 18 Navigation Items matching media_1789917182709.png
   const navItems = [
@@ -76,9 +177,12 @@ export default function AdminPortal({ onLogout }) {
     { id: 'Classes', label: 'Classes', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
     { id: 'Admissions', label: 'Admissions', icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z' },
     { id: 'Employment', label: 'Employment', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+    { id: 'AI Assistant', label: 'AI Assistant', icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' },
     { id: 'Attendance', label: 'Attendance', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
     { id: 'Grades', label: 'Grades', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     { id: 'Fees', label: 'Fees', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+    { id: 'Payroll', label: 'Payroll', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
+    { id: 'Expenses', label: 'Expenses', icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z' },
     { id: 'Timetable', label: 'Timetable', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { id: 'Calendar', label: 'Calendar', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { id: 'News', label: 'News', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z' },
@@ -95,7 +199,7 @@ export default function AdminPortal({ onLogout }) {
   const events = dashboardData?.upcoming_events || []
 
   const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return { modules: [], students: [], teachers: [] }
+    if (!searchQuery.trim()) return { modules: [], students: [], teachers: [], classes: [], parents: [], staff: [] }
     const q = searchQuery.toLowerCase().trim()
     const matchingModules = navItems.filter((item) => item.label.toLowerCase().includes(q))
     const matchingStudents = (dashboardData?.students || []).filter(
@@ -110,17 +214,43 @@ export default function AdminPortal({ onLogout }) {
         (t.subject && t.subject.toLowerCase().includes(q)) ||
         (t.employee_id && t.employee_id.toLowerCase().includes(q))
     )
+    const matchingClasses = (dashboardData?.classes || []).filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.code && c.code.toLowerCase().includes(q)) ||
+        (c.class_teacher && c.class_teacher.toLowerCase().includes(q))
+    )
+    const matchingParents = (dashboardData?.parents || []).filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.email.toLowerCase().includes(q) ||
+        p.phone.includes(q) ||
+        (p.children || []).some((ch) => ch.name.toLowerCase().includes(q))
+    )
+    const matchingStaff = (dashboardData?.staff || []).filter(
+      (st) =>
+        st.name.toLowerCase().includes(q) ||
+        (st.position && st.position.toLowerCase().includes(q)) ||
+        (st.department && st.department.toLowerCase().includes(q)) ||
+        (st.employee_id && st.employee_id.toLowerCase().includes(q))
+    )
     return {
       modules: matchingModules.slice(0, 4),
-      students: matchingStudents.slice(0, 5),
-      teachers: matchingTeachers.slice(0, 5),
+      students: matchingStudents.slice(0, 4),
+      teachers: matchingTeachers.slice(0, 4),
+      classes: matchingClasses.slice(0, 4),
+      parents: matchingParents.slice(0, 4),
+      staff: matchingStaff.slice(0, 4),
     }
   }, [searchQuery, navItems, dashboardData])
 
   const hasSearchResults =
     searchResults.modules.length > 0 ||
     searchResults.students.length > 0 ||
-    searchResults.teachers.length > 0
+    searchResults.teachers.length > 0 ||
+    searchResults.classes.length > 0 ||
+    searchResults.parents.length > 0 ||
+    searchResults.staff.length > 0
 
   return (
     <div className="admin-portal-wrapper">
@@ -128,34 +258,59 @@ export default function AdminPortal({ onLogout }) {
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header">
           <div className="admin-brand">
-            <svg width="30" height="30" viewBox="0 0 40 40" fill="none" className="admin-brand-crest">
-              <rect x="1.5" y="1.5" width="37" height="37" rx="8" fill="#10b981" stroke="#ffffff" strokeWidth="2" />
-              <polygon
-                points="20,7.5 31,13.8 31,26.2 20,32.5 9,26.2 9,13.8"
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {currentSchoolLogo ? (
+              <img
+                src={currentSchoolLogo}
+                alt={currentSchoolName}
+                className="admin-brand-crest"
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  objectFit: 'contain',
+                  backgroundColor: '#ffffff',
+                  padding: 2,
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                }}
               />
-              <circle cx="20" cy="20" r="3.2" fill="#ffffff" />
-            </svg>
-            <div className="admin-brand-title">Riverside Academy</div>
+            ) : (
+              <svg width="30" height="30" viewBox="0 0 40 40" fill="none" className="admin-brand-crest">
+                <rect x="1.5" y="1.5" width="37" height="37" rx="8" fill="#10b981" stroke="#ffffff" strokeWidth="2" />
+                <polygon
+                  points="20,7.5 31,13.8 31,26.2 20,32.5 9,26.2 9,13.8"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <circle cx="20" cy="20" r="3.2" fill="#ffffff" />
+              </svg>
+            )}
+            <div className="admin-brand-title">{currentSchoolName}</div>
           </div>
 
           <div className="admin-school-switcher">
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span className="admin-school-dot" />
-              <span>Riverside Academy</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+              <span className="admin-school-dot" style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentSchoolName}</span>
             </div>
-            <span style={{ fontSize: 10 }}>▼</span>
+            <span style={{ fontSize: 10, flexShrink: 0 }}>▼</span>
           </div>
         </div>
 
         <div className="admin-nav-section-label">ADMIN WORKSPACE</div>
 
         <div className="admin-nav-list">
-          {navItems.map((item) => (
+          {navItems
+            .filter((item) => {
+              if (item.id === 'Settings') return true
+              const vis = portalSettings?.portal_layout_config?.module_visibility
+              if (!vis || typeof vis !== 'object') return true
+              return vis[item.id] !== false
+            })
+            .map((item) => (
             <button
               key={item.id}
               className={`admin-nav-btn ${activeModule === item.id ? 'active' : ''}`}
@@ -170,14 +325,30 @@ export default function AdminPortal({ onLogout }) {
         </div>
 
         <div className="admin-sidebar-footer">
-          <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
-            <rect width="40" height="40" rx="8" fill="#10b981" />
-            <path d="M20 8L31 14V26L20 32L9 26V14L20 8Z" fill="#09261d" />
-            <path d="M20 12L28 16.5V23.5L20 28L12 23.5V16.5L20 12Z" fill="#10b981" />
-          </svg>
-          <div>
-            <div className="admin-sidebar-footer-text">Riverside Academy</div>
-            <div className="admin-sidebar-footer-sub">Learn • Grow • Succeed</div>
+          {currentSchoolLogo ? (
+            <img
+              src={currentSchoolLogo}
+              alt={currentSchoolName}
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: 6,
+                objectFit: 'contain',
+                backgroundColor: '#ffffff',
+                padding: 2,
+                flexShrink: 0,
+              }}
+            />
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+              <rect width="40" height="40" rx="8" fill="#10b981" />
+              <path d="M20 8L31 14V26L20 32L9 26V14L20 8Z" fill="#09261d" />
+              <path d="M20 12L28 16.5V23.5L20 28L12 23.5V16.5L20 12Z" fill="#10b981" />
+            </svg>
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div className="admin-sidebar-footer-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentSchoolName}</div>
+            <div className="admin-sidebar-footer-sub" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentSchoolMotto}</div>
           </div>
         </div>
       </aside>
@@ -195,6 +366,11 @@ export default function AdminPortal({ onLogout }) {
           </div>
 
           <div className="admin-top-actions">
+            {/* Live Automated Date & Time Badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', padding: '6px 14px', borderRadius: 20, border: '1px solid #e2e8f0', fontSize: 12, color: '#334155', fontWeight: 600 }}>
+              <span>{liveDateTime}</span>
+            </div>
+
             {/* Functional Search Pill with Dropdown */}
             <div style={{ position: 'relative' }}>
               <div className="admin-search-pill">
@@ -299,6 +475,75 @@ export default function AdminPortal({ onLogout }) {
                       ))}
                     </div>
                   )}
+
+                  {searchResults.classes.length > 0 && (
+                    <div className="admin-search-section">
+                      <div className="admin-search-section-label">CLASSES</div>
+                      {searchResults.classes.map((c) => (
+                        <div
+                          key={c.id}
+                          className="admin-search-item"
+                          onClick={() => {
+                            setActiveModule('Classes')
+                            setIsSearchOpen(false)
+                            setSearchQuery('')
+                          }}
+                        >
+                          <span className="admin-search-item-icon">🏫</span>
+                          <div>
+                            <div className="admin-search-item-title">{c.name}</div>
+                            <div className="admin-search-item-sub">{c.code} • Teacher: {c.class_teacher || 'Assigned'}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {searchResults.parents.length > 0 && (
+                    <div className="admin-search-section">
+                      <div className="admin-search-section-label">PARENTS & GUARDIANS</div>
+                      {searchResults.parents.map((p) => (
+                        <div
+                          key={p.id}
+                          className="admin-search-item"
+                          onClick={() => {
+                            setActiveModule('Parents')
+                            setIsSearchOpen(false)
+                            setSearchQuery('')
+                          }}
+                        >
+                          <span className="admin-search-item-icon">👪</span>
+                          <div>
+                            <div className="admin-search-item-title">{p.name} ({p.relationship})</div>
+                            <div className="admin-search-item-sub">{p.phone} • {p.email}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {searchResults.staff.length > 0 && (
+                    <div className="admin-search-section">
+                      <div className="admin-search-section-label">STAFF DIRECTORY</div>
+                      {searchResults.staff.map((st) => (
+                        <div
+                          key={st.id}
+                          className="admin-search-item"
+                          onClick={() => {
+                            setActiveModule('Staff')
+                            setIsSearchOpen(false)
+                            setSearchQuery('')
+                          }}
+                        >
+                          <span className="admin-search-item-icon">💼</span>
+                          <div>
+                            <div className="admin-search-item-title">{st.name}</div>
+                            <div className="admin-search-item-sub">{st.employee_id} • {st.position} ({st.department})</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -330,7 +575,15 @@ export default function AdminPortal({ onLogout }) {
                   </div>
                   <div className="admin-notif-list">
                     {notificationsList.map((n) => (
-                      <div key={n.id} className="admin-notif-item">
+                      <div
+                        key={n.id}
+                        className="admin-notif-item"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          if (n.module) setActiveModule(n.module)
+                          setIsNotificationsOpen(false)
+                        }}
+                      >
                         <div className={`admin-notif-icon ${n.type}`}>
                           {n.type === 'red' ? '⚠' : n.type === 'yellow' ? 'ℹ' : n.type === 'blue' ? 'ℹ' : '✓'}
                         </div>
@@ -375,7 +628,11 @@ export default function AdminPortal({ onLogout }) {
             enrollmentByClass={enrollmentByClass}
             attendanceTrend={dashboardData?.attendance_trend}
             events={events}
+            activities={dashboardData?.audit_logs}
+            settings={portalSettings || dashboardData?.settings}
+            dashboardData={dashboardData}
             onNavigate={(mod) => setActiveModule(mod)}
+            onRefresh={() => fetchDashboardData(true)}
             onOpenAddStudent={() => {
               setActiveModule('Students')
               setIsAddStudentOpen(true)
@@ -392,6 +649,7 @@ export default function AdminPortal({ onLogout }) {
             students={students}
             onSelectStudent={(s) => setSelectedStudent(s)}
             onAddStudent={() => {}}
+            onRefresh={() => fetchDashboardData(true)}
             isAddModalOpen={isAddStudentOpen}
             setIsAddModalOpen={setIsAddStudentOpen}
           />
@@ -402,6 +660,7 @@ export default function AdminPortal({ onLogout }) {
             teachers={teachers}
             onSelectTeacher={(t) => setSelectedTeacher(t)}
             onAddTeacher={() => {}}
+            onRefresh={() => fetchDashboardData(true)}
             isAddModalOpen={isAddTeacherOpen}
             setIsAddModalOpen={setIsAddTeacherOpen}
           />
@@ -411,27 +670,117 @@ export default function AdminPortal({ onLogout }) {
           <AdminParents
             parents={dashboardData?.parents}
             onSelectParent={() => {}}
+            onRefresh={() => fetchDashboardData(true)}
           />
         )}
 
-        {activeModule === 'Staff' && <AdminStaff staff={dashboardData?.staff} />}
-        {activeModule === 'Classes' && <AdminClasses classes={dashboardData?.classes} />}
+        {activeModule === 'Staff' && (
+          <AdminStaff
+            staff={dashboardData?.staff}
+            onRefresh={() => fetchDashboardData(true)}
+          />
+        )}
+
+        {activeModule === 'Classes' && (
+          <AdminClasses
+            classes={dashboardData?.classes}
+            onRefresh={() => fetchDashboardData(true)}
+          />
+        )}
+
         {activeModule === 'Admissions' && (
           <div style={{ flex: 1, minWidth: 0, padding: 0 }}>
-            <AdmissionsAdmin onBack={() => setActiveModule('Overview')} />
+            <AdmissionsAdmin
+              onBack={() => setActiveModule('Overview')}
+              onRefresh={() => fetchDashboardData(true)}
+            />
           </div>
         )}
-        {activeModule === 'Employment' && <AdminEmployment />}
-        {activeModule === 'Attendance' && <AdminAttendance students={students} />}
-        {activeModule === 'Grades' && <AdminGrades students={students} />}
-        {activeModule === 'Fees' && <AdminFees invoices={dashboardData?.invoices} />}
-        {activeModule === 'Timetable' && <AdminTimetable timetable={dashboardData?.timetable} />}
+
+        {activeModule === 'Employment' && (
+          <AdminEmployment
+            vacancies={dashboardData?.vacancies}
+            applications={dashboardData?.employment_applications}
+            onRefresh={() => fetchDashboardData(true)}
+          />
+        )}
+
+        {activeModule === 'AI Assistant' && (
+          <AdminAIAssistant
+            isFullPage={true}
+            dashboardData={dashboardData}
+            onNavigate={(mod) => setActiveModule(mod)}
+          />
+        )}
+
+        {activeModule === 'Attendance' && (
+          <AdminAttendance
+            students={students}
+            classes={dashboardData?.classes}
+            teachers={teachers}
+            teacherAttendance={dashboardData?.teacher_attendance}
+            staffAttendance={dashboardData?.staff_attendance}
+            onRefresh={() => fetchDashboardData(true)}
+          />
+        )}
+
+        {activeModule === 'Grades' && <AdminGrades students={students} onRefresh={() => fetchDashboardData(true)} />}
+
+        {activeModule === 'Fees' && (
+          <AdminFees
+            invoices={dashboardData?.invoices}
+            financeReconciliation={dashboardData?.finance_reconciliation}
+            onRefresh={() => fetchDashboardData(true)}
+          />
+        )}
+
+        {activeModule === 'Payroll' && (
+          <AdminPayroll
+            salaryProfiles={dashboardData?.salary_profiles}
+            payrollPeriods={dashboardData?.payroll_periods}
+            salaryPayments={dashboardData?.salary_payments}
+            financeReconciliation={dashboardData?.finance_reconciliation}
+            onRefresh={() => fetchDashboardData(true)}
+          />
+        )}
+
+        {activeModule === 'Expenses' && (
+          <AdminExpenses
+            expenses={dashboardData?.expenses}
+            onRefresh={() => fetchDashboardData(true)}
+          />
+        )}
+
+        {activeModule === 'Timetable' && (
+          <AdminTimetable
+            classes={dashboardData?.classes}
+            teachers={teachers}
+          />
+        )}
+
         {activeModule === 'Calendar' && <AdminCalendar events={events} />}
         {activeModule === 'News' && <AdminNews news={dashboardData?.news} />}
         {activeModule === 'Reports' && <AdminReports />}
-        {activeModule === 'Data Analytics' && <DataAnalystPortal onBack={() => setActiveModule('Overview')} />}
-        {activeModule === 'Audit Logs' && <AdminAuditLogs logs={dashboardData?.audit_logs} />}
-        {activeModule === 'Settings' && <AdminSettings settings={dashboardData?.settings} />}
+        {activeModule === 'Data Analytics' && (
+          <AdminAnalyticsDashboard
+            dashboardData={dashboardData}
+            onLaunchSimulator={() => {}}
+            onRefresh={() => fetchDashboardData(true)}
+          />
+        )}
+        {activeModule === 'Audit Logs' && (
+          <AdminAuditLogs
+            logs={dashboardData?.audit_logs}
+            onRefresh={() => fetchDashboardData(true)}
+          />
+        )}
+        {activeModule === 'Settings' && (
+          <AdminSettings
+            settings={portalSettings || dashboardData?.settings}
+            onSave={handleSaveSettings}
+            onRefresh={() => fetchDashboardData(true)}
+          />
+        )}
       </main>
 
       {/* 3. PROFILE DRAWERS */}
@@ -448,9 +797,6 @@ export default function AdminPortal({ onLogout }) {
           onClose={() => setSelectedTeacher(null)}
         />
       )}
-
-      {/* 4. AI ASSISTANT WIDGET */}
-      <AdminAIAssistant />
     </div>
   )
 }

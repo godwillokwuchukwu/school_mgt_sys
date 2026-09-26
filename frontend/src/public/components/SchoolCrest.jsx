@@ -1,4 +1,43 @@
-export default function SchoolCrest({ size = 40, className = '', variant = 'default' }) {
+import React, { useState, useEffect } from 'react'
+
+export default function SchoolCrest({ size = 40, className = '', variant = 'default', logo = null }) {
+  // Check for custom school logo from prop or localStorage cache, with live event listener
+  const [customLogo, setCustomLogo] = useState(
+    logo || (typeof window !== 'undefined' ? localStorage.getItem('riverside_school_logo') : null)
+  )
+
+  useEffect(() => {
+    if (logo) {
+      setCustomLogo(logo)
+      return
+    }
+    const updateLogo = () => {
+      setCustomLogo(localStorage.getItem('riverside_school_logo'))
+    }
+    window.addEventListener('school-settings-updated', updateLogo)
+    return () => window.removeEventListener('school-settings-updated', updateLogo)
+  }, [logo])
+
+  if (customLogo) {
+    return (
+      <img
+        src={customLogo}
+        alt="School Logo"
+        className={className}
+        style={{
+          width: size,
+          height: size,
+          objectFit: 'contain',
+          borderRadius: Math.max(4, Math.round(size * 0.18)),
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          backgroundColor: '#ffffff',
+          padding: 1,
+        }}
+      />
+    )
+  }
+
   // Variants: 'default' (navy/gold), 'white' (white monochrome), 'gold' (gold monochrome)
   const isWhite = variant === 'white'
   const isGold = variant === 'gold'

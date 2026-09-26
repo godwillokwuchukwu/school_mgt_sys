@@ -46,6 +46,8 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         marked = []
         with transaction.atomic():
             for record in records:
+                if "status" in record:
+                    record["status"] = str(record["status"]).lower()
                 serializer = self.get_serializer(data=record)
                 serializer.is_valid(raise_exception=True)
                 values = serializer.validated_data
@@ -60,3 +62,47 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
                 )
                 marked.append(instance)
         return Response(self.get_serializer(marked, many=True).data)
+
+
+from rest_framework.permissions import AllowAny
+from .models import StaffAttendanceRecord
+from .serializers import StaffAttendanceRecordSerializer
+
+
+class StaffAttendanceRecordViewSet(viewsets.ModelViewSet):
+    queryset = StaffAttendanceRecord.objects.select_related("user", "marked_by").all()
+    serializer_class = StaffAttendanceRecordSerializer
+    permission_classes = [AllowAny]
+    filterset_fields = ["employee_type", "department", "date", "status"]
+    search_fields = ["user__first_name", "user__last_name", "notes"]
+
+    @action(detail=False, methods=["post"])
+    def bulk_mark(self, request):
+        records = request.data.get("records", [])
+        if not isinstance(records, list) or not records:
+            return Response({"records": "Provide a non-empty list of staff attendance records."}, status=400)
+        marked = []
+        with transaction.atomic():
+            for record in records:
+                user_id = record.get("user")
+                date_val = record.get("date")
+                status_val = str(record.get("status", "present")).lower()
+                inst, _ = StaffAttendanceRecord.objects.update_or_create(
+                    user_id=user_id,
+                    date=date_val,
+                    defaults={
+                        "employee_type": record.get("employee_type", "teacher"),
+                        "department": record.get("department", "Academics"),
+                        "check_in_time": record.get("check_in_time", "07:45 AM"),
+                        "check_out_time": record.get("check_out_time", "03:00 PM"),
+                        "hours_worked": record.get("hours_worked", 7.5),
+                        "status": status_val,
+                        "late_minutes": record.get("late_minutes", 0),
+                        "leave_status": record.get("leave_status", ""),
+                        "notes": record.get("notes", ""),
+                        "marked_by": request.user if request.user.is_authenticated else None,
+                    }
+                )
+                marked.append(inst)
+        return Response(self.get_serializer(marked, many=True).data)
+

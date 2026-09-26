@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { publicApi } from '../api'
 import { ErrorBanner, Loading, SuccessBanner } from '../ui'
 import { formatDate } from '../formatters'
+import SchoolCrest from '../components/SchoolCrest'
 import '../../auth/StudentAuth.css'
 
 const EMPTY_APPLICATION = {
@@ -192,17 +193,13 @@ function ApplicantAuth({ onSignedIn, defaultMode = 'register' }) {
           </Link>
 
           {/* School Crest */}
-          <Link to="/" title="Riverside Academy Homepage">
-            <img
-              src="/school-crest.png"
-              alt="Riverside Academy Crest"
-              className="ra-auth-crest"
-            />
+          <Link to="/" title="School Homepage">
+            <SchoolCrest size={68} variant="gold" />
           </Link>
 
           {/* School Name & Tagline */}
-          <h2 className="ra-auth-school-title">Riverside Academy</h2>
-          <p className="ra-auth-school-tagline">Knowledge &nbsp;•&nbsp; Character &nbsp;•&nbsp; Excellence</p>
+          <h2 className="ra-auth-school-title">{(typeof window !== 'undefined' && localStorage.getItem('riverside_school_name')) || 'Riverside Academy'}</h2>
+          <p className="ra-auth-school-tagline">{(typeof window !== 'undefined' && (JSON.parse(localStorage.getItem('riverside_school_settings') || '{}')?.motto)) || 'Knowledge • Character • Excellence'}</p>
           <div className="ra-auth-gold-divider" />
 
           {/* Left-Side Message */}
@@ -212,7 +209,7 @@ function ApplicantAuth({ onSignedIn, defaultMode = 'register' }) {
                 Create Your <span className="gold">Student Account</span>
               </h1>
               <p className="ra-auth-left-subtext">
-                Join Riverside Academy and take the next step in your academic journey. Fill in the details below to get started.
+                Join {(typeof window !== 'undefined' && localStorage.getItem('riverside_school_name')) || 'Riverside Academy'} and take the next step in your academic journey. Fill in the details below to get started.
               </p>
             </>
           )}
@@ -220,7 +217,7 @@ function ApplicantAuth({ onSignedIn, defaultMode = 'register' }) {
           {activeMode === 'login' && (
             <>
               <h1 className="ra-auth-left-heading">
-                Welcome Back to <span className="gold">Riverside Academy</span>
+                Welcome Back to <span className="gold">{(typeof window !== 'undefined' && localStorage.getItem('riverside_school_name')) || 'Riverside Academy'}</span>
               </h1>
               <p className="ra-auth-left-subtext">
                 Access your admissions portal to view, manage, and track your active enrollment applications and academic documents.

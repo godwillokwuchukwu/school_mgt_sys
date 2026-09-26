@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { publicApi } from '../public/api'
+import SchoolCrest from '../public/components/SchoolCrest'
 import './StudentAuth.css'
 
 export default function StudentAuth() {
@@ -181,17 +182,13 @@ export default function StudentAuth() {
       <div className="ra-auth-left">
         <div className="ra-auth-left-top">
           {/* Logo / Crest */}
-          <Link to="/" title="Riverside Academy Homepage">
-            <img
-              src="/school-crest.png"
-              alt="Riverside Academy Crest"
-              className="ra-auth-crest"
-            />
+          <Link to="/" title="School Homepage">
+            <SchoolCrest size={68} variant="gold" />
           </Link>
 
           {/* School Name & Tagline */}
-          <h2 className="ra-auth-school-title">Riverside Academy</h2>
-          <p className="ra-auth-school-tagline">Knowledge &nbsp;•&nbsp; Character &nbsp;•&nbsp; Excellence</p>
+          <h2 className="ra-auth-school-title">{(typeof window !== 'undefined' && localStorage.getItem('riverside_school_name')) || 'Riverside Academy'}</h2>
+          <p className="ra-auth-school-tagline">{(typeof window !== 'undefined' && (JSON.parse(localStorage.getItem('riverside_school_settings') || '{}')?.motto)) || 'Knowledge • Character • Excellence'}</p>
           <div className="ra-auth-gold-divider" />
 
           {/* Left-Side Message */}
@@ -201,7 +198,7 @@ export default function StudentAuth() {
                 Create Your <span className="gold">Student Account</span>
               </h1>
               <p className="ra-auth-left-subtext">
-                Join Riverside Academy and take the next step in your academic journey. Fill in the details below to get started.
+                Join {(typeof window !== 'undefined' && localStorage.getItem('riverside_school_name')) || 'Riverside Academy'} and take the next step in your academic journey. Fill in the details below to get started.
               </p>
             </>
           )}
@@ -209,7 +206,7 @@ export default function StudentAuth() {
           {(activeMode === 'login' || isSuccess) && (
             <>
               <h1 className="ra-auth-left-heading">
-                Welcome Back to <span className="gold">Riverside Academy</span>
+                Welcome Back to <span className="gold">{(typeof window !== 'undefined' && localStorage.getItem('riverside_school_name')) || 'Riverside Academy'}</span>
               </h1>
               <p className="ra-auth-left-subtext">
                 Access your student portal to view courses, grades, announcements, and academic records.

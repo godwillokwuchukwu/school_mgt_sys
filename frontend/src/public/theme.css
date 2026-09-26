@@ -2,21 +2,23 @@
    used by the pre-existing single-page PublicSite component (App.css /
    index.css `.public-*` classes), extended to a full multi-page site.
    Do not change these values without checking against that original. */
-.bfa-public {
-  --bfa-navy: #0e3d2f;        /* Deep academic forest green */
-  --bfa-navy-dark: #09281f;   /* Darkest green */
-  --bfa-navy-2: #134e3f;      /* Medium rich green */
-  --bfa-gold: #b5883e;        /* Rich gold accent */
-  --bfa-gold-light: #c5a059;  /* Light gold */
-  --bfa-gold-hover: #9f7431;  /* Dark gold hover */
-  --bfa-bg: #faf7f2;          /* Warm cream canvas */
+:root {
+  --bfa-navy: #0e3d2f;        /* Primary brand */
+  --bfa-navy-dark: #09281f;   /* Secondary depth */
+  --bfa-navy-2: #134e3f;      /* Secondary tone */
+  --bfa-gold: #b5883e;        /* Accent highlight */
+  --bfa-gold-light: #c5a059;  /* Light accent */
+  --bfa-gold-hover: #9f7431;  /* Dark accent hover */
+  --bfa-bg: #faf7f2;          /* Canvas background */
   --bfa-white: #ffffff;
   --bfa-text: #1a2f26;        /* Deep ink */
-  --bfa-muted: #5e7368;       /* Subtle sage muted */
-  --bfa-border: #e5e0d5;      /* Warm border */
+  --bfa-muted: #5e7368;       /* Subtle muted text */
+  --bfa-border: #e5e0d5;      /* Border */
   --bfa-radius: 8px;
   --bfa-card-radius: 14px;
+}
 
+.bfa-public {
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   color: var(--bfa-text);
   background: var(--bfa-bg);
@@ -79,14 +81,14 @@
   white-space: nowrap;
 }
 .bfa-btn-gold {
-  background: linear-gradient(135deg, #b5883e 0%, #c5a059 100%);
+  background: linear-gradient(135deg, var(--bfa-gold) 0%, var(--bfa-gold-light) 100%);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(181, 136, 62, 0.28);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 .bfa-btn-gold:hover {
-  background: linear-gradient(135deg, #9f7431 0%, #b5883e 100%);
+  background: linear-gradient(135deg, var(--bfa-gold-hover) 0%, var(--bfa-gold) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(181, 136, 62, 0.38);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 }
 .bfa-btn-outline {
   background: #ffffff;
@@ -231,7 +233,7 @@
 .bfa-badge-gold { background: #f7eedc; color: #8a6113; }
 
 /* --- Stats band --- */
-.bfa-stats-band { background: linear-gradient(135deg, #09281f 0%, #0e3d2f 60%, #134e3f 100%); color: #fff; padding: 48px 0; }
+.bfa-stats-band { background: linear-gradient(135deg, var(--bfa-navy-dark) 0%, var(--bfa-navy) 60%, var(--bfa-navy-2) 100%); color: #fff; padding: 48px 0; }
 .bfa-stats-band .bfa-grid-4 { text-align: center; }
 .bfa-stats-band strong { display: block; font: 36px/1 'Playfair Display', Georgia, serif; color: var(--bfa-gold-light); margin-bottom: 6px; }
 .bfa-stats-band span { font-size: 13px; color: #d2e4db; letter-spacing: 0.3px; }
@@ -243,9 +245,9 @@
 
 /* --- Admissions banner --- */
 .bfa-cta-banner {
-  background: linear-gradient(135deg, #09281f 0%, #0e3d2f 55%, #134e3f 100%);
+  background: linear-gradient(135deg, var(--bfa-navy-dark) 0%, var(--bfa-navy) 55%, var(--bfa-navy-2) 100%);
   color: #fff; padding: 60px 40px; text-align: center; border-radius: var(--bfa-card-radius);
-  box-shadow: 0 12px 36px rgba(14, 61, 47, 0.15);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
 }
 .bfa-cta-banner h2 { font-size: 32px; margin: 8px 0 14px; color: #fff; font-family: 'Playfair Display', Georgia, serif; }
 .bfa-cta-banner p { color: #d2e4db; margin: 0 0 28px; font-size: 15px; }
@@ -480,7 +482,7 @@
 .hero-admissions-apply {
   text-align: center;
   padding: 65px 20px 55px;
-  background: linear-gradient(135deg, #09281f 0%, #0e3d2f 55%, #134e3f 100%);
+  background: linear-gradient(135deg, var(--bfa-navy-dark) 0%, var(--bfa-navy) 55%, var(--bfa-navy-2) 100%);
   position: relative;
   overflow: hidden;
 }
@@ -624,11 +626,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0e3d2f;
+  color: var(--bfa-navy);
 }
 
 .ra-empty-app-title {
-  color: #0e3d2f;
+  color: var(--bfa-navy);
   font-size: 24px;
   font-family: 'Playfair Display', Georgia, serif;
   font-weight: 700;
@@ -636,7 +638,7 @@
 }
 
 .ra-empty-app-desc {
-  color: #5e7368;
+  color: var(--bfa-muted);
   font-size: 15px;
   line-height: 1.6;
   max-width: 480px;
@@ -651,13 +653,13 @@
   font-weight: 700;
   padding: 14px 34px;
   border-radius: 8px;
-  box-shadow: 0 4px 14px rgba(181, 136, 62, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
 }
 
 .ra-empty-app-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(181, 136, 62, 0.45);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .ra-empty-features-row {
@@ -667,7 +669,7 @@
   gap: 28px;
   margin-top: 36px;
   padding-top: 24px;
-  border-top: 1px solid #f0ede6;
+  border-top: 1px solid var(--bfa-border);
   flex-wrap: wrap;
 }
 
@@ -676,12 +678,12 @@
   align-items: center;
   gap: 7px;
   font-size: 13px;
-  color: #5e7368;
+  color: var(--bfa-muted);
   font-weight: 500;
 }
 
 .ra-empty-feature-item svg {
-  color: #b5883e;
+  color: var(--bfa-gold);
 }
 
 

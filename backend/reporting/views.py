@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from rest_framework import status, viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -52,7 +52,8 @@ class ReportViewSet(viewsets.ModelViewSet):
 
 
 class AnalyticsOverviewView(APIView):
-    permission_classes = [IsAdminOrTeacher]
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def get(self, request):
         data = analytics_service.get_executive_overview()
@@ -60,7 +61,8 @@ class AnalyticsOverviewView(APIView):
 
 
 class AnalyticsDescriptiveView(APIView):
-    permission_classes = [IsAdminOrTeacher]
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def get(self, request):
         data = analytics_service.get_descriptive_analytics()
@@ -68,7 +70,8 @@ class AnalyticsDescriptiveView(APIView):
 
 
 class AnalyticsDiagnosticView(APIView):
-    permission_classes = [IsAdminOrTeacher]
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def get(self, request):
         data = analytics_service.get_diagnostic_analytics()
@@ -76,7 +79,8 @@ class AnalyticsDiagnosticView(APIView):
 
 
 class AnalyticsPredictiveView(APIView):
-    permission_classes = [IsAdminOrTeacher]
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def get(self, request):
         data = analytics_service.get_predictive_analytics()
@@ -84,7 +88,8 @@ class AnalyticsPredictiveView(APIView):
 
 
 class AnalyticsPrescriptiveView(APIView):
-    permission_classes = [IsAdminOrTeacher]
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def get(self, request):
         data = analytics_service.get_prescriptive_analytics()
@@ -92,7 +97,8 @@ class AnalyticsPrescriptiveView(APIView):
 
 
 class AnalyticsModelsView(APIView):
-    permission_classes = [IsAdminOrTeacher]
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def get(self, request):
         data = analytics_service.get_ml_and_deep_learning_models()
@@ -100,7 +106,8 @@ class AnalyticsModelsView(APIView):
 
 
 class AnalyticsSimulatorView(APIView):
-    permission_classes = [IsAdminOrTeacher]
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request):
         try:
@@ -115,7 +122,8 @@ class AnalyticsSimulatorView(APIView):
 
 
 class AnalyticsExportView(APIView):
-    permission_classes = [IsAdminOrTeacher]
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def get(self, request):
         dataset_type = request.query_params.get("type", "students").lower()

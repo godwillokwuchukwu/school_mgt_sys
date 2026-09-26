@@ -159,3 +159,168 @@ class PaymentWebhookView(APIView):
         )
 
         return Response({"detail": "Payment processed successfully"})
+
+
+from .models import (
+    ExpenseCategory,
+    Expense,
+    ExpenseStatus,
+    SalaryProfile,
+    PayrollPeriod,
+    SalaryPayment,
+)
+from .serializers import (
+    ExpenseCategorySerializer,
+    ExpenseSerializer,
+    SalaryProfileSerializer,
+    PayrollPeriodSerializer,
+    SalaryPaymentSerializer,
+)
+
+
+class ExpenseCategoryViewSet(viewsets.ModelViewSet):
+    queryset = ExpenseCategory.objects.all()
+    serializer_class = ExpenseCategorySerializer
+    permission_classes = [AllowAny]
+    search_fields = ["name", "code"]
+
+
+class ExpenseViewSet(viewsets.ModelViewSet):
+    queryset = Expense.objects.select_related("category", "submitted_by", "approved_by").all()
+    serializer_class = ExpenseSerializer
+    permission_classes = [AllowAny]
+    filterset_fields = ["category", "status", "department", "academic_year", "term"]
+    search_fields = ["expense_id", "title", "vendor", "description"]
+
+    def perform_create(self, serializer):
+        user = self.request.user if self.request.user.is_authenticated else None
+        serializer.save(submitted_by=user)
+
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        expense = self.get_object()
+        expense.status = ExpenseStatus.APPROVED
+        expense.approved_by = request.user if request.user.is_authenticated else None
+        expense.save(update_fields=["status", "approved_by", "updated_at"])
+        return Response(self.get_serializer(expense).data)
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        expense = self.get_object()
+        expense.status = ExpenseStatus.REJECTED
+        expense.approved_by = request.user if request.user.is_authenticated else None
+        expense.notes = request.data.get("notes", expense.notes)
+        expense.save(update_fields=["status", "approved_by", "notes", "updated_at"])
+        return Response(self.get_serializer(expense).data)
+
+    @action(detail=True, methods=["post"])
+    def record_payment(self, request, pk=None):
+        expense = self.get_object()
+        expense.status = ExpenseStatus.PAID
+        expense.payment_method = request.data.get("payment_method", expense.payment_method)
+        expense.supporting_receipt = request.data.get("receipt_url", expense.supporting_receipt)
+        expense.save(update_fields=["status", "payment_method", "supporting_receipt", "updated_at"])
+        return Response(self.get_serializer(expense).data)
+
+
+class SalaryProfileViewSet(viewsets.ModelViewSet):
+    queryset = SalaryProfile.objects.select_related("user").all()
+    serializer_class = SalaryProfileSerializer
+    permission_classes = [AllowAny]
+    filterset_fields = ["employee_type", "department", "is_active"]
+    search_fields = ["user__first_name", "user__last_name", "position"]
+
+
+class PayrollPeriodViewSet(viewsets.ModelViewSet):
+    queryset = PayrollPeriod.objects.prefetch_related("payments__employee", "payments__salary_profile").all()
+    serializer_class = PayrollPeriodSerializer
+    permission_classes = [AllowAny]
+    filterset_fields = ["academic_year", "term", "status"]
+    search_fields = ["name", "code"]
+
+    @action(detail=True, methods=["post"])
+    def calculate(self, request, pk=None):
+        payroll = self.get_object()
+        active_profiles = SalaryProfile.objects.filter(is_active=True).select_related("user")
+
+        total_gross = 0
+        total_deductions = 0
+        total_net = 0
+
+        for prof in active_profiles:
+            gross = prof.gross_salary
+            ded = prof.total_deductions
+            net = prof.net_salary
+            total_gross += gross
+            total_deductions += ded
+            total_net += net
+
+            SalaryPayment.objects.update_or_create(
+                payroll_period=payroll,
+                salary_profile=prof,
+                defaults={
+                    "employee": prof.user,
+                    "basic_salary": prof.basic_salary,
+                    "allowances": prof.housing_allowance + prof.transport_allowance + prof.meal_allowance + prof.other_allowances,
+                    "deductions": ded,
+                    "net_salary": net,
+                    "status": "pending",
+                }
+            )
+
+        payroll.total_gross = total_gross
+        payroll.total_deductions = total_deductions
+        payroll.total_net = total_net
+        payroll.status = PayrollPeriod.Status.CALCULATED
+        payroll.save()
+
+        return Response(self.get_serializer(payroll).data)
+
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        payroll = self.get_object()
+        payroll.status = PayrollPeriod.Status.APPROVED
+        payroll.approved_by = request.user if request.user.is_authenticated else None
+        payroll.approved_at = timezone.now()
+        payroll.save()
+        return Response(self.get_serializer(payroll).data)
+
+    @action(detail=True, methods=["post"])
+    def disburse(self, request, pk=None):
+        payroll = self.get_object()
+        payroll.status = PayrollPeriod.Status.PAID
+        payroll.save()
+
+        # Update payments to paid
+        payroll.payments.all().update(status="paid", payment_date=timezone.now().date())
+
+        # Automatically link or create Expense entry for total payroll
+        cat, _ = ExpenseCategory.objects.get_or_create(
+            name="Teacher & Staff Payroll",
+            defaults={"code": "PAYROLL", "description": "Monthly salaries and faculty payroll disbursements", "monthly_budget": 15000000}
+        )
+        Expense.objects.create(
+            title=f"Staff Payroll Disbursement - {payroll.name}",
+            category=cat,
+            description=f"Automated payroll disbursement for {payroll.payments.count()} faculty and staff members",
+            amount=payroll.total_net,
+            currency="NGN",
+            date_incurred=timezone.now().date(),
+            academic_year=payroll.academic_year,
+            term=payroll.term,
+            department="Human Resources",
+            vendor="Riverside Faculty & Staff",
+            payment_method="Direct Bank Transfer",
+            status=ExpenseStatus.PAID,
+            notes=f"Processed and disbursed via Zenith Bank Corporate Portal. Ref: {payroll.code}"
+        )
+
+        return Response({"detail": f"Salaries disbursed for {payroll.name}. Expense record created.", "payroll": self.get_serializer(payroll).data})
+
+
+class SalaryPaymentViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = SalaryPayment.objects.select_related("payroll_period", "salary_profile", "employee").all()
+    serializer_class = SalaryPaymentSerializer
+    permission_classes = [AllowAny]
+    filterset_fields = ["payroll_period", "status"]
+
