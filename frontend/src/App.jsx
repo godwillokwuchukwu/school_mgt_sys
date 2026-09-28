@@ -7,6 +7,7 @@ import UserManagement from './UserManagement'
 import ParentWorkspace from './ParentWorkspace'
 import DataAnalystPortal from './DataAnalystPortal'
 import AdminPortal from './admin/AdminPortal'
+import NewStudentPortal from './student/StudentPortal'
 import SchoolCrest from './public/components/SchoolCrest'
 import './index.css'
 
