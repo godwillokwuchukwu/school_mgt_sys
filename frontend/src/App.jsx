@@ -293,6 +293,21 @@ function App() {
     )
   }
 
+  if (isStudent) {
+    return (
+      <NewStudentPortal
+        data={data}
+        profile={profile}
+        onLogout={() => {
+          setLoggedIn(false)
+          setRole(null)
+          setProfile(null)
+        }}
+        onSwitchRole={(newRole) => setRole(newRole)}
+      />
+    )
+  }
+
   const nav = isStudent ? studentNav : isTeacher ? teacherNav : isParent ? parentNav : adminNav
   const initials = userName(profile)
     .split(' ')
