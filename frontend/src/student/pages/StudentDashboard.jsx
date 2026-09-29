@@ -23,10 +23,10 @@ export function StudentDashboard({
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-            First Semester 2025/2026 &bull; {student?.level || '100 Level'}
+            {student?.semester || 'First Semester'} {student?.academicYear || '2026/2027'} &bull; {student?.level || 'Senior Division'}
           </div>
           <h1 className="student-banner-title">
-            Good morning, {student?.firstName || 'Chinedu'}!
+            Good morning, {student?.firstName || 'Student'}!
           </h1>
           <p className="student-banner-desc">
             Welcome back to Riverside College. Here’s your academic overview and what’s happening with your studies today.
@@ -56,9 +56,9 @@ export function StudentDashboard({
               </svg>
             </div>
           </div>
-          <div className="student-kpi-val">{courses.length || 5}</div>
+          <div className="student-kpi-val">{courses.length || 0}</div>
           <div className="student-kpi-meta" style={{ color: '#059669' }}>
-            <span>&bull;</span> Enrolled this semester (18 Credits)
+            <span>&bull;</span> Enrolled this semester ({(courses.length || 0) * 3} Credits)
           </div>
         </div>
 
@@ -73,9 +73,9 @@ export function StudentDashboard({
               </svg>
             </div>
           </div>
-          <div className="student-kpi-val">{student?.attendance || '92%'}</div>
+          <div className="student-kpi-val">{student?.attendancePercent ? `${student.attendancePercent}%` : '96%'}</div>
           <div className="student-kpi-meta" style={{ color: '#059669' }}>
-            <span>&bull;</span> 46 attended / 4 missed (Eligible for exams)
+            <span>&bull;</span> Good Academic Standing
           </div>
         </div>
 
@@ -89,9 +89,9 @@ export function StudentDashboard({
               </svg>
             </div>
           </div>
-          <div className="student-kpi-val">{student?.gpa || '3.62'}</div>
+          <div className="student-kpi-val">{student?.gpa || '3.85'}</div>
           <div className="student-kpi-meta" style={{ color: '#059669' }}>
-            <span>&bull;</span> First Class Honours standing
+            <span>&bull;</span> Top 10% in Class
           </div>
         </div>
 
@@ -106,11 +106,11 @@ export function StudentDashboard({
               </svg>
             </div>
           </div>
-          <div className="student-kpi-val" style={{ color: '#dc2626' }}>
-            {financialData?.outstandingFormatted || '₦1,250,000.00'}
+          <div className="student-kpi-val" style={{ color: financialData?.outstanding > 0 ? '#dc2626' : '#059669' }}>
+            {financialData?.outstandingFormatted || '$0.00'}
           </div>
-          <div className="student-kpi-meta" style={{ color: '#d97706' }}>
-            <span>&bull;</span> Due by Oct 15, 2025
+          <div className="student-kpi-meta" style={{ color: financialData?.outstanding > 0 ? '#d97706' : '#059669' }}>
+            <span>&bull;</span> {financialData?.outstanding > 0 ? 'Payment Due' : 'All Fees Cleared'}
           </div>
         </div>
       </div>

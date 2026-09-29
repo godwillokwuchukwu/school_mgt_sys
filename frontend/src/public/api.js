@@ -31,6 +31,9 @@ function clearTokens() {
   localStorage.removeItem(REFRESH_TOKEN_KEY)
   localStorage.removeItem('access_token')
   localStorage.removeItem('refresh_token')
+  localStorage.removeItem('bfa_session')
+  localStorage.removeItem('bfa_user')
+  localStorage.removeItem('bfa_user_role')
 }
 
 async function refreshAccessToken() {

@@ -11,7 +11,7 @@ export function StudentAIAssistant({ student, showToast }) {
     {
       id: 2,
       sender: 'assistant',
-      text: "Certainly, Chinedu! Here is an efficient implementation of Dijkstra's Algorithm in Python using the `heapq` standard library module. This achieves an optimal time complexity of O((V + E) log V).",
+      text: `Certainly, ${student?.firstName || 'Student'}! Here is an efficient implementation of Dijkstra's Algorithm in Python using the \`heapq\` standard library module. This achieves an optimal time complexity of O((V + E) log V).`,
       code: `import heapq
 
 def dijkstra(graph, start_vertex):
@@ -69,9 +69,9 @@ def dijkstra(graph, start_vertex):
         {
           id: Date.now() + 1,
           sender: 'assistant',
-          text: `Great question, Chinedu! Regarding "${userText}": Based on the Riverside College 2025/2026 syllabus for your 100 Level courses, the fundamental concept relates directly to algorithmic efficiency and standard design paradigms.`,
+          text: `Great question, ${student?.firstName || 'Student'}! Regarding "${userText}": Based on the Riverside College academic syllabus, the fundamental concept relates directly to algorithmic efficiency and standard design paradigms.`,
           code: `# Key algorithmic demonstration\ndef analyze_concept():\n    return "Optimal solution verified against course materials."`,
-          citations: ['Riverside College Computing Repository', 'Faculty Course Guide 2025/2026'],
+          citations: ['Riverside College Computing Repository', 'Faculty Course Guide 2026/2027'],
         },
       ])
     }, 700)
@@ -199,7 +199,7 @@ def dijkstra(graph, start_vertex):
                     gap: 6,
                   }}
                 >
-                  <span>{m.sender === 'user' ? 'Chinedu Okafor' : 'Riverside AI Assistant'}</span>
+                  <span>{m.sender === 'user' ? (student?.fullName || 'Student Account') : 'Riverside AI Assistant'}</span>
                 </div>
 
                 <div

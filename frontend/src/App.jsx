@@ -189,7 +189,13 @@ function Empty({ title, detail }) {
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(api.isAuthenticated())
-  const [role, setRole] = useState('student')
+  const [role, setRole] = useState(() => {
+    try {
+      return localStorage.getItem('bfa_user_role') || 'student'
+    } catch {
+      return 'student'
+    }
+  })
   const [profile, setProfile] = useState(null)
   const [data, setData] = useState(demo)
   const [active, setActive] = useState('Overview')
@@ -203,6 +209,23 @@ function App() {
       return 'Riverside Academy'
     }
   })
+
+  const handleLogout = () => {
+    api.logout()
+    try {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('applicant_access_token')
+      localStorage.removeItem('applicant_refresh_token')
+      localStorage.removeItem('bfa_session')
+      localStorage.removeItem('bfa_user')
+      localStorage.removeItem('bfa_user_role')
+    } catch {}
+    setLoggedIn(false)
+    setRole(null)
+    setProfile(null)
+    setData(demo)
+  }
 
   // Sync school branding dynamically with settings changes and public school endpoint
   useEffect(() => {
@@ -238,7 +261,11 @@ function App() {
       .dashboard()
       .then((dashboard) => {
         setProfile(dashboard.profile)
-        setRole(dashboard.profile?.role || 'student')
+        const userRole = dashboard.profile?.role || 'student'
+        setRole(userRole)
+        try {
+          localStorage.setItem('bfa_user_role', userRole)
+        } catch {}
         setData({ ...demo, ...dashboard })
       })
       .catch((requestError) => setError(requestError.message))
@@ -267,7 +294,11 @@ function App() {
       <AuthFlow
         initialMode={authMode}
         onAuthenticated={(session) => {
-          setRole(session.role || 'student')
+          const userRole = session.role || 'student'
+          setRole(userRole)
+          try {
+            localStorage.setItem('bfa_user_role', userRole)
+          } catch {}
           setLoggedIn(true)
         }}
       />
@@ -284,12 +315,11 @@ function App() {
       <AdminPortal
         data={data}
         profile={profile}
-        onLogout={() => {
-          setLoggedIn(false)
-          setRole(null)
-          setProfile(null)
+        onLogout={handleLogout}
+        onSwitchRole={(newRole) => {
+          setRole(newRole)
+          try { localStorage.setItem('bfa_user_role', newRole) } catch {}
         }}
-        onSwitchRole={(newRole) => setRole(newRole)}
       />
     )
   }
@@ -299,12 +329,11 @@ function App() {
       <NewStudentPortal
         data={data}
         profile={profile}
-        onLogout={() => {
-          setLoggedIn(false)
-          setRole(null)
-          setProfile(null)
+        onLogout={handleLogout}
+        onSwitchRole={(newRole) => {
+          setRole(newRole)
+          try { localStorage.setItem('bfa_user_role', newRole) } catch {}
         }}
-        onSwitchRole={(newRole) => setRole(newRole)}
       />
     )
   }
@@ -358,10 +387,7 @@ function App() {
           </div>
           <button
             aria-label="Sign out"
-            onClick={() => {
-              api.logout()
-              setLoggedIn(false)
-            }}
+            onClick={handleLogout}
           >
             ↗
           </button>

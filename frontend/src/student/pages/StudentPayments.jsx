@@ -39,9 +39,9 @@ export function StudentPayments({ financialData, onOpenMakePayment, showToast })
               </svg>
             </div>
           </div>
-          <div className="student-kpi-val">{financialData?.totalFeesFormatted || '₦2,500,000.00'}</div>
+          <div className="student-kpi-val">{financialData?.totalFeesFormatted || '$2,000.00'}</div>
           <div className="student-kpi-meta" style={{ color: '#64748b' }}>
-            Academic Session 2025/2026
+            Academic Session 2026/2027
           </div>
         </div>
 
@@ -55,10 +55,10 @@ export function StudentPayments({ financialData, onOpenMakePayment, showToast })
             </div>
           </div>
           <div className="student-kpi-val" style={{ color: '#0f766e' }}>
-            {financialData?.paidFormatted || '₦1,250,000.00'}
+            {financialData?.paidFormatted || '$2,000.00'}
           </div>
           <div className="student-kpi-meta" style={{ color: '#059669' }}>
-            {financialData?.progressPercent || 50}% of total fees settled
+            {financialData?.progressPercent || 100}% of total fees settled
           </div>
         </div>
 
@@ -73,11 +73,11 @@ export function StudentPayments({ financialData, onOpenMakePayment, showToast })
               </svg>
             </div>
           </div>
-          <div className="student-kpi-val" style={{ color: '#dc2626' }}>
-            {financialData?.outstandingFormatted || '₦1,250,000.00'}
+          <div className="student-kpi-val" style={{ color: financialData?.outstanding > 0 ? '#dc2626' : '#059669' }}>
+            {financialData?.outstandingFormatted || '$0.00'}
           </div>
-          <div className="student-kpi-meta" style={{ color: '#d97706' }}>
-            Due prior to semester exam commencement
+          <div className="student-kpi-meta" style={{ color: financialData?.outstanding > 0 ? '#d97706' : '#059669' }}>
+            {financialData?.outstanding > 0 ? 'Due prior to semester exam' : 'All Bursary Accounts Cleared'}
           </div>
         </div>
 
@@ -91,11 +91,11 @@ export function StudentPayments({ financialData, onOpenMakePayment, showToast })
               </svg>
             </div>
           </div>
-          <div className="student-kpi-val" style={{ fontSize: 20, color: '#d97706' }}>
-            50% Completed
+          <div className="student-kpi-val" style={{ fontSize: 20, color: '#0f766e' }}>
+            {financialData?.outstanding > 0 ? 'Partial Settlement' : '100% Cleared'}
           </div>
           <div className="student-kpi-meta" style={{ color: '#059669' }}>
-            Installment plan active
+            Official Bursary Standing Verified
           </div>
         </div>
       </div>

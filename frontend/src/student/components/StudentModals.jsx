@@ -5,7 +5,7 @@ import React, { useState } from 'react'
  */
 export function SubmitAssignmentModal({ assignment, onClose, onSubmitSuccess }) {
   const [comment, setComment] = useState('')
-  const [fileName, setFileName] = useState('assignment_chinedu_cs2024.pdf')
+  const [fileName, setFileName] = useState('assignment_submission.pdf')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = (e) => {
@@ -109,9 +109,9 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitSuccess }) 
  * 2. Make Payment Modal
  */
 export function MakePaymentModal({ financialData, onClose, onPaymentSuccess }) {
-  const [selectedFee, setSelectedFee] = useState('Tuition Fee (Balance)')
-  const [amount, setAmount] = useState('1250000')
-  const [paymentMethod, setPaymentMethod] = useState('Card (Paystack / Interswitch)')
+  const [selectedFee, setSelectedFee] = useState('Tuition & Instruction')
+  const [amount, setAmount] = useState(() => String(financialData?.outstanding || 500))
+  const [paymentMethod, setPaymentMethod] = useState('Credit / Debit Card')
   const [isProcessing, setIsProcessing] = useState(false)
 
   const handlePay = (e) => {
@@ -119,18 +119,18 @@ export function MakePaymentModal({ financialData, onClose, onPaymentSuccess }) {
     setIsProcessing(true)
     setTimeout(() => {
       setIsProcessing(false)
-      const numericAmount = parseInt(amount, 10) || 500000
+      const numericAmount = parseFloat(amount) || 500
       if (onPaymentSuccess) {
         onPaymentSuccess({
           txnId: `RC-TXN-${Date.now().toString().slice(-6)}`,
           fee: selectedFee,
           amount: numericAmount,
-          amountFormatted: `₦${numericAmount.toLocaleString()}.00`,
+          amountFormatted: `$${numericAmount.toLocaleString()}.00`,
           method: paymentMethod,
         })
       }
       onClose()
-    }, 900)
+    }, 700)
   }
 
   return (
@@ -154,7 +154,7 @@ export function MakePaymentModal({ financialData, onClose, onPaymentSuccess }) {
             <div style={{ backgroundColor: '#ecfdf5', padding: 14, borderRadius: 8, border: '1px solid #a7f3d0' }}>
               <div style={{ fontSize: 12, color: '#065f46', fontWeight: 600 }}>Total Outstanding Balance</div>
               <div style={{ fontSize: 22, fontWeight: 800, color: '#064e3b', marginTop: 2 }}>
-                {financialData?.outstandingFormatted || '₦1,250,000.00'}
+                {financialData?.outstandingFormatted || '$0.00'}
               </div>
             </div>
 
@@ -163,21 +163,25 @@ export function MakePaymentModal({ financialData, onClose, onPaymentSuccess }) {
               <select
                 className="student-form-select"
                 value={selectedFee}
-                onChange={(e) => {
-                  setSelectedFee(e.target.value)
-                  if (e.target.value.includes('Tuition')) setAmount('1250000')
-                  else if (e.target.value.includes('ICT')) setAmount('150000')
-                  else setAmount('100000')
-                }}
+                onChange={(e) => setSelectedFee(e.target.value)}
               >
-                <option value="Tuition Fee (Balance)">Tuition Fee (First Semester Balance) - ₦1,250,000</option>
-                <option value="ICT & Science Lab Fee">Departmental Science & ICT Lab Levy - ₦150,000</option>
-                <option value="Medical & Exam Clearance">Medical Insurance & Exam Clearance - ₦100,000</option>
+                {(financialData?.feeBreakdown || []).length > 0 ? (
+                  financialData.feeBreakdown.map((f) => (
+                    <option key={f.id} value={f.item}>
+                      {f.item} ({f.balance})
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="Tuition Fee (Balance)">Tuition Fee (First Semester Settlement)</option>
+                    <option value="Science & ICT Lab Levy">Science & ICT Computing Lab Levy</option>
+                  </>
+                )}
               </select>
             </div>
 
             <div className="student-form-group">
-              <label className="student-form-label">Payment Amount (₦)</label>
+              <label className="student-form-label">Payment Amount ($)</label>
               <input
                 type="number"
                 className="student-form-input"
@@ -194,9 +198,9 @@ export function MakePaymentModal({ financialData, onClose, onPaymentSuccess }) {
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
               >
-                <option value="Debit Card (Paystack / Interswitch)">Debit Card (Mastercard / Visa / Verve)</option>
-                <option value="Direct Bank Transfer (Access Bank)">Direct Bank Transfer (Instant Verification)</option>
-                <option value="Riverside College Remita Gateway">Remita RRR Electronic Payment</option>
+                <option value="Credit / Debit Card">Credit / Debit Card (Instant Clearance)</option>
+                <option value="Electronic Bank Transfer">Electronic Bank Transfer</option>
+                <option value="Campus Bursary Settlement">Campus Bursary Direct</option>
               </select>
             </div>
           </div>
@@ -206,7 +210,7 @@ export function MakePaymentModal({ financialData, onClose, onPaymentSuccess }) {
               Cancel
             </button>
             <button type="submit" className="student-btn student-btn-primary" disabled={isProcessing}>
-              {isProcessing ? 'Processing Transaction...' : `Pay ₦${parseInt(amount || '0', 10).toLocaleString()} Now`}
+              {isProcessing ? 'Processing Transaction...' : `Pay $${parseFloat(amount || '0').toLocaleString()} Now`}
             </button>
           </div>
         </form>

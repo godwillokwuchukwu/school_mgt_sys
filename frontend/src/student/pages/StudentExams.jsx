@@ -1,12 +1,12 @@
 import React from 'react'
 
 export function StudentExams({ exams = [], showToast }) {
-  const examTimetable = [
-    { code: 'CS101', title: 'Intro to Computer Science', date: 'Nov 10, 2025', time: '09:00 AM - 12:00 PM', hall: 'CBT Complex A', seat: 'Seat A-42', invigilator: 'Dr. Adeyemi' },
-    { code: 'MAT201', title: 'Calculus II', date: 'Nov 12, 2025', time: '01:00 PM - 04:00 PM', hall: 'Main Auditorium', seat: 'Seat AUD-118', invigilator: 'Prof. Balogun' },
-    { code: 'ENG102', title: 'Technical Communication', date: 'Nov 15, 2025', time: '09:00 AM - 11:00 AM', hall: 'New Exam Hall', seat: 'Seat NEH-89', invigilator: 'Dr. Eze' },
-    { code: 'PHY101', title: 'Physics for Engineers', date: 'Nov 18, 2025', time: '09:00 AM - 12:00 PM', hall: 'Science Complex LT', seat: 'Seat SC-34', invigilator: 'Dr. Bello' },
-    { code: 'CS201', title: 'Data Structures & Algorithms', date: 'Nov 21, 2025', time: '01:00 PM - 04:00 PM', hall: 'CBT Complex B', seat: 'Seat B-12', invigilator: 'Engr. Williams' },
+  const examTimetable = exams.length > 0 ? exams : [
+    { code: 'CS101', title: 'Intro to Computer Science', date: 'Nov 10, 2026', time: '09:00 AM - 12:00 PM', hall: 'CBT Complex A', seat: 'Seat A-42', invigilator: 'Dr. Adeyemi' },
+    { code: 'MAT201', title: 'Calculus II', date: 'Nov 12, 2026', time: '01:00 PM - 04:00 PM', hall: 'Main Auditorium', seat: 'Seat AUD-118', invigilator: 'Prof. Balogun' },
+    { code: 'ENG102', title: 'Technical Communication', date: 'Nov 15, 2026', time: '09:00 AM - 11:00 AM', hall: 'New Exam Hall', seat: 'Seat NEH-89', invigilator: 'Dr. Eze' },
+    { code: 'PHY101', title: 'Physics for Engineers', date: 'Nov 18, 2026', time: '09:00 AM - 12:00 PM', hall: 'Science Complex LT', seat: 'Seat SC-34', invigilator: 'Dr. Bello' },
+    { code: 'CS201', title: 'Data Structures & Algorithms', date: 'Nov 21, 2026', time: '01:00 PM - 04:00 PM', hall: 'CBT Complex B', seat: 'Seat B-12', invigilator: 'Engr. Williams' },
   ]
 
   const handleDownloadDocket = () => {

@@ -5,7 +5,7 @@ export function StudentDocuments({ documents = [], onOpenUploadModal, showToast 
 
   const filteredDocs = documents.filter((doc) => {
     if (filter === 'All') return true
-    return doc.category.toLowerCase() === filter.toLowerCase()
+    return (doc.category || '').toLowerCase() === filter.toLowerCase()
   })
 
   const handleDownload = (docName) => {

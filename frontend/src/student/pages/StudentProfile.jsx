@@ -4,15 +4,29 @@ export function StudentProfile({ student, onUpdateProfile, showToast }) {
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState('personal')
 
-  const [formData, setFormData] = useState({
-    fullName: student?.fullName || 'Chinedu Okafor',
-    phone: student?.phone || '+234 803 123 4567',
-    email: student?.email || 'chinedu.okafor@riverside.edu.ng',
-    address: student?.address || 'Block B, Hall 4, Riverside Campus, Lagos',
-    emergencyName: student?.emergencyContact?.name || 'Emeka Okafor',
-    emergencyPhone: student?.emergencyContact?.phone || '+234 802 987 6543',
-    emergencyEmail: student?.emergencyContact?.email || 'emeka.okafor@gmail.com',
-  })
+  const [prevStudent, setPrevStudent] = useState(student)
+  const [formData, setFormData] = useState(() => ({
+    fullName: student?.fullName || '',
+    phone: student?.phone || '',
+    email: student?.email || '',
+    address: student?.address || '',
+    emergencyName: student?.emergencyContact?.name || '',
+    emergencyPhone: student?.emergencyContact?.phone || '',
+    emergencyEmail: student?.emergencyContact?.email || '',
+  }))
+
+  if (student !== prevStudent) {
+    setPrevStudent(student)
+    setFormData({
+      fullName: student?.fullName || '',
+      phone: student?.phone || '',
+      email: student?.email || '',
+      address: student?.address || '',
+      emergencyName: student?.emergencyContact?.name || '',
+      emergencyPhone: student?.emergencyContact?.phone || '',
+      emergencyEmail: student?.emergencyContact?.email || '',
+    })
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -85,7 +99,7 @@ export function StudentProfile({ student, onUpdateProfile, showToast }) {
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
             <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>
-              {student?.fullName || 'Chinedu Okafor'}
+              {student?.fullName || 'Student Account'}
             </h2>
             <span className="student-badge student-badge-success">Active Enrolled</span>
           </div>
@@ -297,25 +311,25 @@ export function StudentProfile({ student, onUpdateProfile, showToast }) {
               <div>
                 <div style={{ fontSize: 12, color: '#64748b' }}>Next of Kin / Contact Name</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', marginTop: 4 }}>
-                  {student?.emergencyContact?.name || 'Emeka Okafor'}
+                  {student?.emergencyContact?.name || 'Guardian Contact'}
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: 12, color: '#64748b' }}>Relationship</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', marginTop: 4 }}>
-                  {student?.emergencyContact?.relationship || 'Father'}
+                  {student?.emergencyContact?.relationship || 'Parent / Guardian'}
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: 12, color: '#64748b' }}>Emergency Phone</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', marginTop: 4 }}>
-                  {student?.emergencyContact?.phone || '+234 802 987 6543'}
+                  {student?.emergencyContact?.phone || '+1 (555) 987-6543'}
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: 12, color: '#64748b' }}>Emergency Email</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', marginTop: 4 }}>
-                  {student?.emergencyContact?.email || 'emeka.okafor@gmail.com'}
+                  {student?.emergencyContact?.email || 'guardian@school.example.com'}
                 </div>
               </div>
             </div>

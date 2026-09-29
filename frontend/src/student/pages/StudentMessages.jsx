@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-export function StudentMessages({ initialConversations = [] }) {
+export function StudentMessages({ initialConversations = [], student }) {
   const [conversations, setConversations] = useState(
     initialConversations.length > 0
       ? initialConversations
@@ -8,21 +8,21 @@ export function StudentMessages({ initialConversations = [] }) {
           {
             id: 1,
             name: 'Dr. K. Adeyemi',
-            role: 'Course Advisor & CS101 Lecturer',
+            role: 'Course Advisor & Academic Lecturer',
             avatar: 'KA',
-            lastMessage: 'Please ensure you review the recursion chapter before tomorrow’s lab.',
+            lastMessage: 'Please ensure you review the course chapter before tomorrow’s lab.',
             time: '10:14 AM',
             unread: 1,
             messages: [
-              { id: 1, sender: 'Dr. K. Adeyemi', text: 'Hello Chinedu, how are your preparations for the mid-semester lab?', time: '10:05 AM', fromMe: false },
-              { id: 2, sender: 'Chinedu Okafor', text: 'Good morning Sir! Preparations are going very well. I just finished implementing the binary search exercises.', time: '10:10 AM', fromMe: true },
-              { id: 3, sender: 'Dr. K. Adeyemi', text: 'Excellent work. Please ensure you review the recursion chapter before tomorrow’s lab.', time: '10:14 AM', fromMe: false },
+              { id: 1, sender: 'Dr. K. Adeyemi', text: `Hello ${student?.firstName || 'Student'}, how are your preparations for the upcoming course practical?`, time: '10:05 AM', fromMe: false },
+              { id: 2, sender: student?.fullName || 'Student', text: 'Good morning Sir! Preparations are going very well. I just finished the analytical derivation exercises.', time: '10:10 AM', fromMe: true },
+              { id: 3, sender: 'Dr. K. Adeyemi', text: 'Excellent work. Please ensure you review the course chapter before tomorrow’s lab.', time: '10:14 AM', fromMe: false },
             ],
           },
           {
             id: 2,
             name: 'Prof. O. Balogun',
-            role: 'MAT201 Lecturer',
+            role: 'Mathematics Lecturer',
             avatar: 'OB',
             lastMessage: 'Tutorial problem set 3 solutions are now posted on the notice board.',
             time: 'Yesterday',
@@ -34,14 +34,14 @@ export function StudentMessages({ initialConversations = [] }) {
           {
             id: 3,
             name: 'Engr. T. Williams',
-            role: 'CS201 Lecturer',
+            role: 'Computer Systems Lecturer',
             avatar: 'TW',
             lastMessage: 'Great job on the linked list assignment.',
             time: 'Sep 20',
             unread: 0,
             messages: [
-              { id: 1, sender: 'Engr. T. Williams', text: 'Great job on the linked list assignment. Your Big-O complexity analysis was spot on.', time: 'Sep 20', fromMe: false },
-              { id: 2, sender: 'Chinedu Okafor', text: 'Thank you very much, Engr. Williams!', time: 'Sep 20', fromMe: true },
+              { id: 1, sender: 'Engr. T. Williams', text: 'Great job on the programming assignment. Your complexity analysis was spot on.', time: 'Sep 20', fromMe: false },
+              { id: 2, sender: student?.fullName || 'Student', text: 'Thank you very much, Engr. Williams!', time: 'Sep 20', fromMe: true },
             ],
           },
         ]
@@ -58,7 +58,7 @@ export function StudentMessages({ initialConversations = [] }) {
 
     const newMsg = {
       id: Date.now(),
-      sender: 'Chinedu Okafor',
+      sender: student?.fullName || 'Student',
       text: inputText,
       time: 'Just now',
       fromMe: true,

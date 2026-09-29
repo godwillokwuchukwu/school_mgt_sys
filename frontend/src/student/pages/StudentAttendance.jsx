@@ -1,21 +1,29 @@
 import React from 'react'
 
-export function StudentAttendance({ attendanceRecords = [] }) {
+export function StudentAttendance({ attendanceRecords = [], student }) {
+  const overallRate = student?.attendancePercent !== undefined ? `${student.attendancePercent}%` : '96.0%'
+  const sessionsCount = attendanceRecords.length > 0 ? attendanceRecords.length : 46
+
   const courseAttendance = [
-    { code: 'CS101', title: 'Intro to Computer Science', attended: 19, total: 20, rate: 95, status: 'Eligible' },
-    { code: 'MAT201', title: 'Calculus II', attended: 9, total: 10, rate: 90, status: 'Eligible' },
-    { code: 'ENG102', title: 'Technical Communication', attended: 8, total: 8, rate: 100, status: 'Eligible' },
-    { code: 'PHY101', title: 'Physics for Engineers', attended: 11, total: 13, rate: 85, status: 'Eligible' },
-    { code: 'CS201', title: 'Data Structures & Algorithms', attended: 11, total: 12, rate: 92, status: 'Eligible' },
+    { code: 'CRS-101', title: 'Calculus & Analytics', attended: 19, total: 20, rate: 95, status: 'Eligible' },
+    { code: 'CRS-102', title: 'University Physics', attended: 9, total: 10, rate: 90, status: 'Eligible' },
+    { code: 'CRS-103', title: 'Organic Chemistry', attended: 8, total: 8, rate: 100, status: 'Eligible' },
+    { code: 'CRS-104', title: 'Computer Science', attended: 11, total: 12, rate: 92, status: 'Eligible' },
   ]
 
-  const recentLogs = [
-    { id: 1, date: 'Sep 22, 2025', course: 'CS101', session: 'Lecture', status: 'Present' },
-    { id: 2, date: 'Sep 21, 2025', course: 'MAT201', session: 'Tutorial', status: 'Present' },
-    { id: 3, date: 'Sep 19, 2025', course: 'PHY101', session: 'Practical Lab', status: 'Absent' },
-    { id: 4, date: 'Sep 18, 2025', course: 'CS201', session: 'Lab Session', status: 'Present' },
-    { id: 5, date: 'Sep 16, 2025', course: 'ENG102', session: 'Seminar', status: 'Present' },
-  ]
+  const recentLogs = attendanceRecords.length > 0
+    ? attendanceRecords.map((a, i) => ({
+        id: a.id || i + 1,
+        date: a.date || '2026-09-28',
+        course: a.class_name || a.subject_name || `Course #${i + 1}`,
+        session: 'Lecture',
+        status: (a.status || 'present').charAt(0).toUpperCase() + (a.status || 'present').slice(1).toLowerCase(),
+      }))
+    : [
+        { id: 1, date: 'Sep 28, 2026', course: 'Advanced Calculus', session: 'Lecture', status: 'Present' },
+        { id: 2, date: 'Sep 27, 2026', course: 'University Physics', session: 'Lab Session', status: 'Present' },
+        { id: 3, date: 'Sep 26, 2026', course: 'Organic Chemistry', session: 'Lecture', status: 'Present' },
+      ]
 
   return (
     <div className="student-attendance-page">
@@ -24,12 +32,12 @@ export function StudentAttendance({ attendanceRecords = [] }) {
         <div>
           <h1 className="student-page-title">Attendance Tracking</h1>
           <p className="student-page-subtitle">
-            First Semester 2025/2026 &bull; Mandatory 75% Examination Attendance Threshold
+            First Semester 2026/2027 &bull; Mandatory 75% Examination Attendance Threshold
           </p>
         </div>
         <div className="student-page-actions">
           <span className="student-badge student-badge-success" style={{ padding: '6px 12px', fontSize: 13 }}>
-            Exam Eligible (92% Overall)
+            Exam Eligible ({overallRate} Overall)
           </span>
         </div>
       </div>
@@ -46,15 +54,15 @@ export function StudentAttendance({ attendanceRecords = [] }) {
               </svg>
             </div>
           </div>
-          <div className="student-kpi-val" style={{ color: '#0f766e' }}>92.0%</div>
+          <div className="student-kpi-val" style={{ color: '#0f766e' }}>{overallRate}</div>
           <div className="student-kpi-meta" style={{ color: '#059669' }}>
-            +17% above 75% threshold
+            Good Academic Standing
           </div>
         </div>
 
         <div className="student-kpi-card">
           <div className="student-kpi-top">
-            <span className="student-kpi-label">Sessions Attended</span>
+            <span className="student-kpi-label">Sessions Recorded</span>
             <div className="student-kpi-icon-wrap" style={{ backgroundColor: '#eff6ff', color: '#2563eb' }}>
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
@@ -62,7 +70,7 @@ export function StudentAttendance({ attendanceRecords = [] }) {
               </svg>
             </div>
           </div>
-          <div className="student-kpi-val">46 Sessions</div>
+          <div className="student-kpi-val">{sessionsCount} Sessions</div>
           <div className="student-kpi-meta" style={{ color: '#64748b' }}>
             Total 50 lecture & lab hours
           </div>

@@ -1,13 +1,25 @@
 import React from 'react'
 
-export function StudentGrades({ courses = [], student }) {
-  const gradesList = [
-    { code: 'CS101', title: 'Introduction to Computer Science', credits: 3, grade: 'A', score: 88, points: 15.0, status: 'Passed' },
-    { code: 'MAT201', title: 'Calculus II', credits: 4, grade: 'A', score: 92, points: 20.0, status: 'Passed' },
-    { code: 'ENG102', title: 'Technical Communication', credits: 2, grade: 'B+', score: 85, points: 8.0, status: 'Passed' },
-    { code: 'PHY101', title: 'Physics for Engineers', credits: 4, grade: 'A-', score: 82, points: 18.0, status: 'Passed' },
-    { code: 'CS201', title: 'Data Structures & Algorithms', credits: 4, grade: 'A', score: 90, points: 20.0, status: 'Passed' },
-  ]
+export function StudentGrades({ courses = [], student, grades = [] }) {
+  const gradesList = grades.length > 0
+    ? grades.map((g, i) => ({
+        code: g.code || `SUB-10${i + 1}`,
+        title: g.subject_name || g.class_name || `Subject ${i + 1}`,
+        credits: 3,
+        grade: g.letter_grade || g.grade_letter || 'A',
+        score: parseFloat(g.score) || 85,
+        points: ((parseFloat(g.score) >= 90 ? 4.0 : parseFloat(g.score) >= 80 ? 3.0 : 2.0) * 3).toFixed(1),
+        status: 'Passed'
+      }))
+    : courses.map((c) => ({
+        code: c.code,
+        title: c.title,
+        credits: c.credits || 3,
+        grade: c.grade || 'A',
+        score: 88,
+        points: 12.0,
+        status: 'Passed'
+      }))
 
   const handlePrint = () => {
     window.print()
