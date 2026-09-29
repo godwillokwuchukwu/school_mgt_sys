@@ -305,10 +305,11 @@ function App() {
     )
   }
 
-  const isStudent = role === 'student'
-  const isTeacher = role === 'teacher'
-  const isParent = role === 'parent'
-  const isAdmin = role === 'admin'
+  const effectiveRole = profile?.role || role || 'student'
+  const isStudent = effectiveRole === 'student'
+  const isTeacher = effectiveRole === 'teacher'
+  const isParent = effectiveRole === 'parent'
+  const isAdmin = effectiveRole === 'admin'
 
   if (isAdmin) {
     return (
@@ -317,8 +318,10 @@ function App() {
         profile={profile}
         onLogout={handleLogout}
         onSwitchRole={(newRole) => {
-          setRole(newRole)
-          try { localStorage.setItem('bfa_user_role', newRole) } catch {}
+          if (profile?.role === 'admin') {
+            setRole(newRole)
+            try { localStorage.setItem('bfa_user_role', newRole) } catch {}
+          }
         }}
       />
     )
@@ -330,10 +333,6 @@ function App() {
         data={data}
         profile={profile}
         onLogout={handleLogout}
-        onSwitchRole={(newRole) => {
-          setRole(newRole)
-          try { localStorage.setItem('bfa_user_role', newRole) } catch {}
-        }}
       />
     )
   }
