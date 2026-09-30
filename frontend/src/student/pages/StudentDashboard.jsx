@@ -12,10 +12,9 @@ export function StudentDashboard({
   onOpenSubmitAssignment,
   onOpenMakePayment,
   onOpenUploadDocument,
-  schoolName = 'Riverside Academy',
-  schoolMotto = 'Knowledge, Character, Excellence',
-  settings = null,
-  currencySymbol = '$',
+  schoolName = 'Riverside College',
+  academicYear = '2025/2026',
+  semester = '1st Term',
 }) {
   return (
     <div className="student-dashboard-page">
@@ -27,7 +26,7 @@ export function StudentDashboard({
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-            {student?.semester || settings?.academic_form?.currentTerm || 'First Semester'} {student?.academicYear || settings?.academic_form?.currentSession || '2025/2026'} &bull; {student?.level || 'Senior Division'}
+            {student?.semester || semester} {student?.academicYear || academicYear} &bull; {student?.level || 'Senior Division'}
           </div>
           <h1 className="student-banner-title">
             Good morning, {student?.firstName || 'Student'}!
@@ -37,12 +36,12 @@ export function StudentDashboard({
           </p>
         </div>
 
-        {/* Motivational quote widget from institutional settings */}
+        {/* Motivational quote widget from reference image */}
         <div className="student-quote-widget">
           <p className="student-quote-text">
-            &ldquo;{schoolMotto}&rdquo;
+            &ldquo;The beautiful thing about learning is that no one can take it away from you.&rdquo;
           </p>
-          <div className="student-quote-author">&mdash; {schoolName} Motto</div>
+          <div className="student-quote-author">&mdash; B.B. King</div>
         </div>
       </div>
 

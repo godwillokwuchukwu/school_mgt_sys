@@ -6,10 +6,10 @@ export function StudentSidebar({
   isMobileOpen,
   setIsMobileOpen,
   onLogout,
-  schoolName = 'Riverside Academy',
+  schoolName = 'Riverside College',
   schoolLogo = null,
   schoolMotto = 'Knowledge, Character, Excellence',
-  portalLayout = null,
+  moduleVisibility = null,
 }) {
   const navItems = [
     {
@@ -173,6 +173,13 @@ export function StudentSidebar({
     if (setIsMobileOpen) setIsMobileOpen(false)
   }
 
+  const visibleNavItems = navItems.filter((item) => {
+    if (!moduleVisibility) return true
+    if (moduleVisibility[item.id] !== undefined) return moduleVisibility[item.id] !== false
+    if (moduleVisibility[item.label] !== undefined) return moduleVisibility[item.label] !== false
+    return true
+  })
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -184,15 +191,28 @@ export function StudentSidebar({
       <aside className={`student-sidebar ${isMobileOpen ? 'mobile-open' : ''}`}>
         {/* Brand Crest & School Name */}
         <div className="student-sidebar-brand">
-          <div className="student-brand-crest">
+          <div
+            className="student-brand-crest"
+            style={{
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            }}
+          >
             {schoolLogo ? (
-              <img src={schoolLogo} alt={schoolName} className="student-brand-logo-img" />
+              <img
+                src={schoolLogo}
+                alt={schoolName}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit' }}
+              />
             ) : (
-              <span>{schoolName ? schoolName.charAt(0).toUpperCase() : 'R'}</span>
+              <span>{(schoolName || 'R').charAt(0).toUpperCase()}</span>
             )}
           </div>
           <div className="student-brand-text">
-            <span className="student-brand-title">{schoolName}</span>
+            <span className="student-brand-title">{schoolName || 'Riverside College'}</span>
             <span className="student-brand-subtitle">Student Portal</span>
           </div>
         </div>
@@ -200,15 +220,7 @@ export function StudentSidebar({
         {/* Global Navigation */}
         <div className="student-sidebar-nav">
           <div className="student-nav-heading">Academic Menu</div>
-          {navItems
-            .filter((item) => {
-              if (item.id === 'Overview' || item.id === 'Settings') return true
-              const vis = portalLayout?.module_visibility
-              if (!vis) return true
-              const key = item.id.toLowerCase()
-              return vis[key] !== false && vis[item.id] !== false
-            })
-            .map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive =
               activePage === item.id ||
               (item.id === 'Overview' && activePage === 'Dashboard')
@@ -245,7 +257,7 @@ export function StudentSidebar({
         {/* Footer */}
         <div className="student-sidebar-footer">
           <div className="student-tagline">
-            {schoolName} &bull; {schoolMotto}
+            {schoolMotto || `${schoolName} • Excellence, Integrity & Innovation`}
           </div>
           <div className="student-sidebar-actions">
             <button

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import './student.css'
 import { applyThemePalette } from '../public/themePalettes'
 
@@ -29,98 +29,130 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [toastMessage, setToastMessage] = useState(null)
 
-  // Institutional Settings synced dynamically from Admin Portal & Backend
-  const [settings, setSettings] = useState(() => {
+  // Live Dynamic Settings synchronized with Admin Portal Configuration
+  const [portalSettings, setPortalSettings] = useState(() => {
     try {
-      const saved = localStorage.getItem('riverside_school_settings')
-      return saved ? JSON.parse(saved) : null
+      const cached = localStorage.getItem('riverside_school_settings')
+      return cached ? JSON.parse(cached) : {}
     } catch {
-      return null
+      return {}
     }
   })
 
-  const loadSettings = useCallback(async () => {
-    // 1. Check local storage cache for immediate synchronous restore
-    try {
-      const cached = localStorage.getItem('riverside_school_settings')
-      if (cached) {
-        const parsed = JSON.parse(cached)
-        setSettings(parsed)
-        const palette = parsed.theme_palette || parsed.themePalette
-        if (palette) applyThemePalette(palette)
-      }
-    } catch {
-      // ignore
-    }
+  const schoolName =
+    portalSettings?.school_name ||
+    portalSettings?.school_form?.schoolName ||
+    (typeof window !== 'undefined' ? localStorage.getItem('riverside_school_name') : null) ||
+    'Riverside Academy'
 
-    // 2. Fetch fresh institutional settings directly from backend database
-    try {
-      const res = await fetch('/api/core/admin/settings/')
-      if (res.ok) {
-        const liveSettings = await res.json()
-        if (liveSettings && typeof liveSettings === 'object') {
-          setSettings(liveSettings)
-          localStorage.setItem('riverside_school_settings', JSON.stringify(liveSettings))
-          const palette = liveSettings.theme_palette || liveSettings.themePalette
-          if (palette) applyThemePalette(palette)
-        }
-      }
-    } catch {
-      // ignore if offline or network error
-    }
-  }, [])
+  const schoolLogo =
+    portalSettings?.logo_data ||
+    portalSettings?.school_logo ||
+    portalSettings?.school_form?.logo ||
+    (typeof window !== 'undefined' ? localStorage.getItem('riverside_school_logo') : null) ||
+    null
 
+  const schoolMotto =
+    portalSettings?.motto ||
+    portalSettings?.school_form?.motto ||
+    'Knowledge, Character, Excellence'
+
+  const academicYear =
+    portalSettings?.academic_form?.currentSession ||
+    portalSettings?.academic_year ||
+    '2025/2026'
+
+  const semester =
+    portalSettings?.academic_form?.currentTerm ||
+    '1st Term'
+
+  const minAttendance =
+    portalSettings?.academic_form?.minAttendance !== undefined && portalSettings?.academic_form?.minAttendance !== ''
+      ? Number(portalSettings.academic_form.minAttendance)
+      : 85
+
+  const passMark =
+    portalSettings?.academic_form?.passMark !== undefined && portalSettings?.academic_form?.passMark !== ''
+      ? Number(portalSettings.academic_form.passMark)
+      : 50
+
+  const themePalette =
+    portalSettings?.theme_palette ||
+    portalSettings?.school_form?.themePalette ||
+    (typeof window !== 'undefined' ? localStorage.getItem('riverside_theme_palette') : null) ||
+    'emerald_gold'
+
+  const moduleVisibility = portalSettings?.portal_layout_config?.module_visibility || null
+  const notificationPolicy = portalSettings?.notif_form || null
+  const securityPolicy = portalSettings?.security_form || null
+
+  // Fetch settings from database and synchronize theme & real-time changes
   useEffect(() => {
-    loadSettings()
+    if (themePalette) {
+      applyThemePalette(themePalette)
+    }
 
-    // Real-time custom event triggered when admin saves settings in current browser window
-    const handleSettingsUpdated = (e) => {
-      if (e.detail) {
-        setSettings(e.detail)
-        const palette = e.detail.theme_palette || e.detail.themePalette
-        if (palette) applyThemePalette(palette)
-      } else {
-        loadSettings()
+    if (api.getSettings) {
+      api
+        .getSettings()
+        .then((res) => {
+          const s = res?.settings || res
+          if (s && typeof s === 'object') {
+            setPortalSettings(s)
+            const sName = s.school_name || s.school_form?.schoolName
+            if (sName) localStorage.setItem('riverside_school_name', sName)
+            const sLogo = s.logo_data || s.school_logo || s.school_form?.logo
+            if (sLogo) localStorage.setItem('riverside_school_logo', sLogo)
+            const sTheme = s.theme_palette || s.school_form?.themePalette
+            if (sTheme) {
+              localStorage.setItem('riverside_theme_palette', sTheme)
+              applyThemePalette(sTheme)
+            }
+            try {
+              localStorage.setItem('riverside_school_settings', JSON.stringify(s))
+            } catch {}
+          }
+        })
+        .catch(() => {})
+    }
+
+    const handleSettingsUpdate = (e) => {
+      const updated = e?.detail || (() => {
+        try {
+          const cached = localStorage.getItem('riverside_school_settings')
+          return cached ? JSON.parse(cached) : null
+        } catch {
+          return null
+        }
+      })()
+      if (updated) {
+        setPortalSettings(updated)
+        const sTheme = updated.theme_palette || updated.school_form?.themePalette
+        if (sTheme) applyThemePalette(sTheme)
       }
     }
 
-    // Real-time storage event triggered when admin saves settings across browser tabs
-    const handleStorage = (e) => {
+    const handleStorageEvent = (e) => {
       if (e.key === 'riverside_school_settings' && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue)
-          setSettings(parsed)
-          const palette = parsed.theme_palette || parsed.themePalette
-          if (palette) applyThemePalette(palette)
-        } catch {
-          // ignore
-        }
+          setPortalSettings(parsed)
+          const sTheme = parsed.theme_palette || parsed.school_form?.themePalette
+          if (sTheme) applyThemePalette(sTheme)
+        } catch {}
+      } else if (e.key === 'riverside_theme_palette' && e.newValue) {
+        applyThemePalette(e.newValue)
       }
     }
 
-    window.addEventListener('school-settings-updated', handleSettingsUpdated)
-    window.addEventListener('storage', handleStorage)
-
-    // Periodic poll every 30s to keep all student accounts updated automatically
-    const interval = setInterval(loadSettings, 30000)
+    window.addEventListener('school-settings-updated', handleSettingsUpdate)
+    window.addEventListener('storage', handleStorageEvent)
 
     return () => {
-      window.removeEventListener('school-settings-updated', handleSettingsUpdated)
-      window.removeEventListener('storage', handleStorage)
-      clearInterval(interval)
+      window.removeEventListener('school-settings-updated', handleSettingsUpdate)
+      window.removeEventListener('storage', handleStorageEvent)
     }
-  }, [loadSettings])
-
-  // Institutional Settings computed values
-  const schoolName = settings?.school_form?.school_name || settings?.school_name || 'Riverside College'
-  const schoolLogo = settings?.school_form?.logo_data || settings?.logo_data || null
-  const schoolMotto = settings?.school_form?.motto || settings?.motto || 'Excellence, Character & Wisdom'
-  const currentSession = settings?.academic_form?.currentSession || settings?.current_session || '2026/2027'
-  const currentTerm = settings?.academic_form?.currentTerm || settings?.current_term || 'First Semester'
-  const currencySymbol = settings?.academic_form?.currency || settings?.currency || '$'
-  const passMark = settings?.academic_form?.passMark !== undefined ? Number(settings.academic_form.passMark) : 50
-  const minAttendance = settings?.academic_form?.minAttendance !== undefined ? Number(settings.academic_form.minAttendance) : 85
-  const portalLayout = settings?.portal_layout_config || null
+  }, [])
 
   // 1. Live Dynamic Profile from Database
   const student = useMemo(() => {
@@ -172,12 +204,10 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
       program: 'College Preparatory & Science Track',
       department: 'Secondary Academics',
       level: 'Senior Division (Grade 12)',
-      academicYear: currentSession,
-      semester: currentTerm,
+      academicYear: academicYear,
+      semester: semester,
       status: 'Enrolled & Active',
       avatar: profile?.photo || null,
-      schoolName: schoolName,
-      schoolMotto: schoolMotto,
       gpa: gpa,
       attendancePercent: attendancePercent,
       emergencyContact: {
@@ -187,7 +217,12 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
         email: 'guardian@school.example.com',
       }
     }
-  }, [profile, data?.grades, data?.attendance, currentSession, currentTerm, schoolName, schoolMotto])
+  }, [profile, data?.grades, data?.attendance, academicYear, semester])
+
+  // Update document title with dynamic school branding
+  useEffect(() => {
+    document.title = `${student.fullName} · ${schoolName} Student Portal`
+  }, [student.fullName, schoolName])
 
   // 2. Real Enrolled Courses from Database
   const courses = useMemo(() => {
@@ -245,9 +280,9 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
       return {
         id: f.id || i + 1,
         item: f.title || f.fee_type || `Term Fee #${i + 1}`,
-        total: `${currencySymbol}${amt.toLocaleString()}`,
-        paid: `${currencySymbol}${pd.toLocaleString()}`,
-        balance: `${currencySymbol}${bal.toLocaleString()}`,
+        total: `$${amt.toLocaleString()}`,
+        paid: `$${pd.toLocaleString()}`,
+        balance: `$${bal.toLocaleString()}`,
         status: bal === 0 ? 'Paid' : 'Unpaid',
         statusClass: bal === 0 ? 'success' : 'danger',
       }
@@ -256,18 +291,18 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
     if (feeList.length === 0) {
       return {
         totalFees: 2000,
-        totalFeesFormatted: `${currencySymbol}2,000.00`,
+        totalFeesFormatted: '$2,000.00',
         paid: 2000,
-        paidFormatted: `${currencySymbol}2,000.00`,
+        paidFormatted: '$2,000.00',
         outstanding: 0,
-        outstandingFormatted: `${currencySymbol}0.00`,
+        outstandingFormatted: '$0.00',
         progressPercent: 100,
         feeBreakdown: [
-          { item: 'First Semester Tuition & Instruction', total: `${currencySymbol}1,600.00`, paid: `${currencySymbol}1,600.00`, balance: `${currencySymbol}0.00`, status: 'Paid', statusClass: 'success' },
-          { item: 'Science & Computing Laboratory Access', total: `${currencySymbol}400.00`, paid: `${currencySymbol}400.00`, balance: `${currencySymbol}0.00`, status: 'Paid', statusClass: 'success' },
+          { item: 'First Semester Tuition & Instruction', total: '$1,600.00', paid: '$1,600.00', balance: '$0.00', status: 'Paid', statusClass: 'success' },
+          { item: 'Science & Computing Laboratory Access', total: '$400.00', paid: '$400.00', balance: '$0.00', status: 'Paid', statusClass: 'success' },
         ],
         paymentHistory: [
-          { id: 'RC-TXN-101', date: 'Sep 01, 2026', description: 'Tuition Payment', amount: `${currencySymbol}2,000.00`, method: 'Online Card Payment', status: 'Completed' },
+          { id: 'RC-TXN-101', date: 'Sep 01, 2026', description: 'Tuition Payment', amount: '$2,000.00', method: 'Online Card Payment', status: 'Completed' },
         ],
       }
     }
@@ -275,18 +310,18 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
     const paid = Math.max(0, total - outstanding)
     return {
       totalFees: total,
-      totalFeesFormatted: `${currencySymbol}${total.toLocaleString()}`,
+      totalFeesFormatted: `$${total.toLocaleString()}`,
       paid: paid,
-      paidFormatted: `${currencySymbol}${paid.toLocaleString()}`,
+      paidFormatted: `$${paid.toLocaleString()}`,
       outstanding: outstanding,
-      outstandingFormatted: `${currencySymbol}${outstanding.toLocaleString()}`,
+      outstandingFormatted: `$${outstanding.toLocaleString()}`,
       progressPercent: total > 0 ? Math.round((paid / total) * 100) : 100,
       feeBreakdown,
       paymentHistory: [
-        { id: 'RC-TXN-101', date: 'Sep 01, 2026', description: 'Academic Settlement', amount: `${currencySymbol}${paid.toLocaleString()}`, method: 'Bursary Bank Settlement', status: 'Completed' },
+        { id: 'RC-TXN-101', date: 'Sep 01, 2026', description: 'Academic Settlement', amount: `$${paid.toLocaleString()}`, method: 'Bursary Bank Settlement', status: 'Completed' },
       ],
     }
-  }, [data?.fees, currencySymbol])
+  }, [data?.fees])
 
   // 4. Real Assignments from Database
   const assignments = useMemo(() => {
@@ -366,14 +401,14 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
         title: a.title || 'Official Academic Bulletin',
         date: a.created_at ? new Date(a.created_at).toLocaleDateString() : 'Today',
         category: a.category || 'Academic',
-        snippet: a.content || a.body || `Important campus update from ${schoolName} administration.`,
+        snippet: a.content || a.body || 'Important campus update from Riverside administration.',
       }))
     }
     return [
       { id: 1, title: 'Fall 2026 Examination Schedule Published', date: 'Today', category: 'Academic', snippet: 'The official assessment timetable has been posted. Verify your examination halls and admit cards.' },
       { id: 2, title: 'Library Digital Access Upgrade', date: 'Yesterday', category: 'General', snippet: 'New research databases and peer-reviewed journals are now accessible with your student credentials.' },
     ]
-  }, [data?.announcements, schoolName])
+  }, [data?.announcements])
 
   const notifications = useMemo(() => {
     const notifs = data?.notifications || []
@@ -414,10 +449,10 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
     }
     return [
       { id: 1, name: 'Official Academic Transcript (Current Session)', category: 'Academic', date: 'Sep 10, 2026', size: '1.2 MB', type: 'PDF', status: 'Verified' },
-      { id: 2, name: `${schoolName} Admission Confirmation`, category: 'Academic', date: 'Aug 20, 2026', size: '480 KB', type: 'PDF', status: 'Verified' },
+      { id: 2, name: 'Riverside College Admission Confirmation', category: 'Academic', date: 'Aug 20, 2026', size: '480 KB', type: 'PDF', status: 'Verified' },
       { id: 3, name: 'Campus Student Digital Identity Card', category: 'Identification', date: 'Sep 05, 2026', size: '820 KB', type: 'PNG', status: 'Verified' },
     ]
-  }, [data?.documents, schoolName])
+  }, [data?.documents])
 
   // 9. Modals State
   const [assignmentForSubmission, setAssignmentForSubmission] = useState(null)
@@ -491,7 +526,7 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
         schoolName={schoolName}
         schoolLogo={schoolLogo}
         schoolMotto={schoolMotto}
-        portalLayout={portalLayout}
+        moduleVisibility={moduleVisibility}
       />
 
       {/* 2. Main Layout */}
@@ -507,6 +542,7 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
           setIsMobileOpen={setIsMobileOpen}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
+          schoolName={schoolName}
         />
 
         {/* Dynamic Page Views */}
@@ -520,22 +556,19 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
               recentGrades={recentGrades}
               announcements={announcements}
               financialData={financialData}
-              settings={settings}
-              schoolName={schoolName}
-              schoolMotto={schoolMotto}
-              currencySymbol={currencySymbol}
               onNavigate={(page) => setActivePage(page)}
               onOpenSubmitAssignment={() => setAssignmentForSubmission(assignments[0])}
               onOpenMakePayment={() => setIsPaymentModalOpen(true)}
               onOpenUploadDocument={() => setIsUploadDocModalOpen(true)}
+              schoolName={schoolName}
+              academicYear={academicYear}
+              semester={semester}
             />
           )}
 
           {activePage === 'Profile' && (
             <StudentProfile
               student={student}
-              schoolName={schoolName}
-              settings={settings}
               onUpdateProfile={async (formData) => {
                 if (api.updateProfile) {
                   await api.updateProfile(formData).catch(() => {})
@@ -565,8 +598,8 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
               student={student}
               grades={data?.grades || []}
               passMark={passMark}
-              settings={settings}
-              schoolName={schoolName}
+              academicYear={academicYear}
+              semester={semester}
             />
           )}
 
@@ -587,7 +620,8 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
               ]}
               student={student}
               minAttendance={minAttendance}
-              settings={settings}
+              academicYear={academicYear}
+              semester={semester}
             />
           )}
 
@@ -632,9 +666,6 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
           {activePage === 'Payments' && (
             <StudentPayments
               financialData={financialData}
-              settings={settings}
-              schoolName={schoolName}
-              currencySymbol={currencySymbol}
               onOpenMakePayment={() => setIsPaymentModalOpen(true)}
               showToast={showToast}
             />
@@ -645,6 +676,7 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
               documents={documents}
               onOpenUploadModal={() => setIsUploadDocModalOpen(true)}
               showToast={showToast}
+              schoolName={schoolName}
             />
           )}
 
@@ -672,6 +704,7 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
             <StudentAIAssistant
               student={student}
               showToast={showToast}
+              schoolName={schoolName}
             />
           )}
 
@@ -685,9 +718,13 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
           {activePage === 'Settings' && (
             <StudentSettings
               student={student}
-              schoolName={schoolName}
-              settings={settings}
               showToast={showToast}
+              notificationPolicy={notificationPolicy}
+              securityPolicy={securityPolicy}
+              schoolName={schoolName}
+              schoolEmail={portalSettings?.school_form?.email || portalSettings?.email || 'helpdesk@school.edu.ng'}
+              schoolPhone={portalSettings?.school_form?.phone || portalSettings?.phone || '+234 1 234 5678'}
+              schoolAddress={portalSettings?.school_form?.address || portalSettings?.address || 'ICT Centre, Ground Floor, Senate Building'}
             />
           )}
         </main>
@@ -705,7 +742,6 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
       {isPaymentModalOpen && (
         <MakePaymentModal
           financialData={financialData}
-          currencySymbol={currencySymbol}
           onClose={() => setIsPaymentModalOpen(false)}
           onPaymentSuccess={handlePaymentSuccess}
         />

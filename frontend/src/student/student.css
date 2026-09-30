@@ -10,21 +10,21 @@
   --rc-green-900: var(--bfa-navy, #09261d);
   --rc-green-800: var(--bfa-navy-2, #0f392c);
   --rc-green-700: var(--bfa-navy-2, #135341);
-  --rc-green-600: var(--bfa-gold-hover, #1b6c56);
+  --rc-green-600: var(--bfa-navy-2, #1b6c56);
   --rc-teal-500: var(--bfa-gold-light, #14b8a6);
   --rc-teal-600: var(--bfa-gold-hover, #0d9488);
   --rc-teal-700: var(--bfa-gold, #0f766e);
   
-  --rc-navy-900: var(--bfa-text, #0f172a);
+  --rc-navy-900: #0f172a;
   --rc-navy-800: #1e293b;
   --rc-slate-700: #334155;
   --rc-slate-600: #475569;
   --rc-slate-500: #64748b;
   --rc-slate-400: #94a3b8;
   --rc-slate-300: #cbd5e1;
-  --rc-slate-200: var(--bfa-border, #e2e8f0);
+  --rc-slate-200: #e2e8f0;
   --rc-slate-100: #f1f5f9;
-  --rc-slate-50: var(--bfa-bg, #f8fafc);
+  --rc-slate-50: #f8fafc;
   
   --rc-white: #ffffff;
   --rc-card-bg: #ffffff;
@@ -108,14 +108,6 @@
   font-size: 20px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
   flex-shrink: 0;
-  overflow: hidden;
-}
-
-.student-brand-logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 10px;
 }
 
 .student-brand-text {

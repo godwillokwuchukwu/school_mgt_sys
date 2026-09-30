@@ -5,24 +5,20 @@ export function StudentGrades({
   student,
   grades = [],
   passMark = 50,
-  settings = null,
-  schoolName = 'Riverside Academy',
+  academicYear = '2025/2026',
+  semester = '1st Term',
 }) {
-  const effectivePassMark = settings?.academic_form?.passMark ?? passMark
-  const currentTerm = settings?.academic_form?.currentTerm || student?.semester || 'First Semester'
-  const currentSession = settings?.academic_form?.currentSession || student?.academicYear || '2025/2026'
-
   const gradesList = grades.length > 0
     ? grades.map((g, i) => {
-        const sc = parseFloat(g.score) || 85
+        const numScore = parseFloat(g.score) || 85
         return {
           code: g.code || `SUB-10${i + 1}`,
           title: g.subject_name || g.class_name || `Subject ${i + 1}`,
           credits: 3,
-          grade: g.letter_grade || g.grade_letter || (sc >= 80 ? 'A' : sc >= 70 ? 'B' : sc >= effectivePassMark ? 'C' : 'F'),
-          score: sc,
-          points: ((sc >= 90 ? 4.0 : sc >= 80 ? 3.0 : sc >= 70 ? 2.0 : sc >= effectivePassMark ? 1.0 : 0) * 3).toFixed(1),
-          status: sc >= effectivePassMark ? 'Passed' : 'Failed',
+          grade: g.letter_grade || g.grade_letter || 'A',
+          score: numScore,
+          points: ((numScore >= 90 ? 4.0 : numScore >= 80 ? 3.0 : 2.0) * 3).toFixed(1),
+          status: numScore >= passMark ? 'Passed' : 'Failed'
         }
       })
     : courses.map((c) => ({
@@ -32,7 +28,7 @@ export function StudentGrades({
         grade: c.grade || 'A',
         score: 88,
         points: 12.0,
-        status: 88 >= effectivePassMark ? 'Passed' : 'Failed',
+        status: 88 >= passMark ? 'Passed' : 'Failed'
       }))
 
   const handlePrint = () => {
@@ -46,7 +42,7 @@ export function StudentGrades({
         <div>
           <h1 className="student-page-title">Academic Grades & Performance</h1>
           <p className="student-page-subtitle">
-            {currentTerm} {currentSession} &bull; {schoolName} Pass Standard: {effectivePassMark}%
+            {semester} {academicYear} &bull; Cumulative Grade Point Average (CGPA) &bull; Passing Grade Threshold: {passMark}%
           </p>
         </div>
         <div className="student-page-actions">

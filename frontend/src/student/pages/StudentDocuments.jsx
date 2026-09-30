@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-export function StudentDocuments({ documents = [], onOpenUploadModal, showToast }) {
+export function StudentDocuments({ documents = [], onOpenUploadModal, showToast, schoolName = 'Riverside College' }) {
   const [filter, setFilter] = useState('All')
 
   const filteredDocs = documents.filter((doc) => {
@@ -86,7 +86,7 @@ export function StudentDocuments({ documents = [], onOpenUploadModal, showToast 
                     </div>
                     <div>
                       <div style={{ fontWeight: 700, color: '#0f172a' }}>{doc.name}</div>
-                      <div style={{ fontSize: 11.5, color: '#64748b' }}>Riverside College Registry Verified</div>
+                      <div style={{ fontSize: 11.5, color: '#64748b' }}>{schoolName} Registry Verified</div>
                     </div>
                   </div>
                 </td>

@@ -174,9 +174,15 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
     }))
   }
 
-  // Sync state whenever settings prop updates from database
+  const isDirtyRef = React.useRef(false)
+  const initialLoadedRef = React.useRef(false)
+
+  // Sync state ONLY on initial load from database/props; do not overwrite active editing forms
   useEffect(() => {
-    if (!settings) return
+    if (!settings || Object.keys(settings).length === 0) return
+    if (initialLoadedRef.current) return
+    initialLoadedRef.current = true
+
     if (settings.school_form) {
       setSchoolForm((prev) => ({ ...prev, ...settings.school_form }))
     } else if (settings.school_name) {
@@ -245,6 +251,7 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0]
     if (file) {
+      isDirtyRef.current = true
       const reader = new FileReader()
       reader.onload = (event) => {
         const base64 = event.target.result
@@ -260,6 +267,7 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
   }
 
   const handleSelectTheme = (paletteId) => {
+    isDirtyRef.current = true
     setSchoolForm((prev) => ({ ...prev, themePalette: paletteId }))
     applyThemePalette(paletteId)
     if (typeof window !== 'undefined') {
@@ -278,25 +286,30 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
       ''
     const effectiveTheme = schoolForm.themePalette || 'emerald_gold'
 
-    try {
-      const payload = {
-        school_name: schoolForm.schoolName,
-        school_logo: effectiveLogo,
-        logo_data: effectiveLogo,
+    const payload = {
+      school_name: schoolForm.schoolName,
+      school_logo: effectiveLogo,
+      logo_data: effectiveLogo,
+      theme_palette: effectiveTheme,
+      public_layout_config: publicLayout,
+      portal_layout_config: portalLayout,
+      school_form: {
+        ...schoolForm,
+        logo: effectiveLogo,
+        themePalette: effectiveTheme,
         theme_palette: effectiveTheme,
-        public_layout_config: publicLayout,
-        portal_layout_config: portalLayout,
-        school_form: {
-          ...schoolForm,
-          logo: effectiveLogo,
-          themePalette: effectiveTheme,
-          theme_palette: effectiveTheme,
-        },
-        academic_form: academicForm,
-        notif_form: notifForm,
-        security_form: securityForm,
-        roles: roles,
-      }
+      },
+      academic_form: academicForm,
+      notif_form: notifForm,
+      security_form: securityForm,
+      roles: roles,
+      backups: backups,
+    }
+
+    try {
+      const response = await api.updateSettings(payload)
+      isDirtyRef.current = false
+      showToast(`${tabName} saved successfully to database!`)
 
       // Immediately synchronize local storage for instantaneous reactive UI updates
       if (typeof window !== 'undefined') {
@@ -307,72 +320,44 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
         localStorage.setItem('riverside_theme_palette', effectiveTheme)
         applyThemePalette(effectiveTheme)
 
-        localStorage.setItem(
-          'riverside_school_settings',
-          JSON.stringify({
-            ...settings,
-            school_name: schoolForm.schoolName,
-            school_logo: effectiveLogo,
-            logo_data: effectiveLogo,
-            theme_palette: effectiveTheme,
-            public_layout_config: publicLayout,
-            portal_layout_config: portalLayout,
-            school_form: { ...schoolForm, logo: effectiveLogo, themePalette: effectiveTheme },
-            academic_form: academicForm,
-            notif_form: notifForm,
-            security_form: securityForm,
-            roles: roles,
-            backups: backups,
-          })
-        )
+        const savedSettingsObj = response?.settings || {
+          ...settings,
+          ...payload,
+        }
+        localStorage.setItem('riverside_school_settings', JSON.stringify(savedSettingsObj))
         document.title = `${schoolForm.schoolName} — Administration Portal`
-        window.dispatchEvent(new Event('school-settings-updated'))
+        window.dispatchEvent(new CustomEvent('school-settings-updated', { detail: savedSettingsObj }))
       }
 
-      const response = await api.updateSettings(payload)
-      setIsSaving(false)
-      showToast(`${tabName} saved successfully to database!`)
-      window.dispatchEvent(new CustomEvent('admin-refresh-data'))
       if (response?.settings && onSave) {
         onSave(response.settings)
       } else if (onSave) {
         onSave({
           ...settings,
-          school_name: schoolForm.schoolName,
-          school_logo: effectiveLogo,
-          logo_data: effectiveLogo,
-          theme_palette: effectiveTheme,
-          public_layout_config: publicLayout,
-          portal_layout_config: portalLayout,
-          school_form: { ...schoolForm, logo: effectiveLogo, themePalette: effectiveTheme },
-          academic_form: academicForm,
-          notif_form: notifForm,
-          security_form: securityForm,
-          roles: roles,
-          backups: backups,
+          ...payload,
         })
       }
     } catch (err) {
       console.warn('Backend update failed, saving locally:', err)
-      setIsSaving(false)
+      isDirtyRef.current = false
       showToast(`${tabName} saved locally`)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('riverside_school_name', schoolForm.schoolName)
+        if (effectiveLogo) localStorage.setItem('riverside_school_logo', effectiveLogo)
+        localStorage.setItem('riverside_theme_palette', effectiveTheme)
+        applyThemePalette(effectiveTheme)
+        const localObj = { ...settings, ...payload }
+        localStorage.setItem('riverside_school_settings', JSON.stringify(localObj))
+        window.dispatchEvent(new CustomEvent('school-settings-updated', { detail: localObj }))
+      }
       if (onSave) {
         onSave({
           ...settings,
-          school_name: schoolForm.schoolName,
-          school_logo: effectiveLogo,
-          logo_data: effectiveLogo,
-          theme_palette: effectiveTheme,
-          public_layout_config: publicLayout,
-          portal_layout_config: portalLayout,
-          school_form: { ...schoolForm, logo: effectiveLogo, themePalette: effectiveTheme },
-          academic_form: academicForm,
-          notif_form: notifForm,
-          security_form: securityForm,
-          roles: roles,
-          backups: backups,
+          ...payload,
         })
       }
+    } finally {
+      setIsSaving(false)
     }
   }
 

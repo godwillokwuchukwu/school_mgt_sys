@@ -108,7 +108,7 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitSuccess }) 
 /**
  * 2. Make Payment Modal
  */
-export function MakePaymentModal({ financialData, onClose, onPaymentSuccess, currencySymbol = '$' }) {
+export function MakePaymentModal({ financialData, onClose, onPaymentSuccess }) {
   const [selectedFee, setSelectedFee] = useState('Tuition & Instruction')
   const [amount, setAmount] = useState(() => String(financialData?.outstanding || 500))
   const [paymentMethod, setPaymentMethod] = useState('Credit / Debit Card')
@@ -125,7 +125,7 @@ export function MakePaymentModal({ financialData, onClose, onPaymentSuccess, cur
           txnId: `RC-TXN-${Date.now().toString().slice(-6)}`,
           fee: selectedFee,
           amount: numericAmount,
-          amountFormatted: `${currencySymbol}${numericAmount.toLocaleString()}.00`,
+          amountFormatted: `$${numericAmount.toLocaleString()}.00`,
           method: paymentMethod,
         })
       }
@@ -154,7 +154,7 @@ export function MakePaymentModal({ financialData, onClose, onPaymentSuccess, cur
             <div style={{ backgroundColor: '#ecfdf5', padding: 14, borderRadius: 8, border: '1px solid #a7f3d0' }}>
               <div style={{ fontSize: 12, color: '#065f46', fontWeight: 600 }}>Total Outstanding Balance</div>
               <div style={{ fontSize: 22, fontWeight: 800, color: '#064e3b', marginTop: 2 }}>
-                {financialData?.outstandingFormatted || `${currencySymbol}0.00`}
+                {financialData?.outstandingFormatted || '$0.00'}
               </div>
             </div>
 
@@ -181,7 +181,7 @@ export function MakePaymentModal({ financialData, onClose, onPaymentSuccess, cur
             </div>
 
             <div className="student-form-group">
-              <label className="student-form-label">Payment Amount ({currencySymbol})</label>
+              <label className="student-form-label">Payment Amount ($)</label>
               <input
                 type="number"
                 className="student-form-input"
@@ -210,7 +210,7 @@ export function MakePaymentModal({ financialData, onClose, onPaymentSuccess, cur
               Cancel
             </button>
             <button type="submit" className="student-btn student-btn-primary" disabled={isProcessing}>
-              {isProcessing ? 'Processing Transaction...' : `Pay ${currencySymbol}${parseFloat(amount || '0').toLocaleString()} Now`}
+              {isProcessing ? 'Processing Transaction...' : `Pay $${parseFloat(amount || '0').toLocaleString()} Now`}
             </button>
           </div>
         </form>

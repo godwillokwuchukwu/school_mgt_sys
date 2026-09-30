@@ -1,14 +1,18 @@
 import React, { useState } from 'react'
 
-export function StudentSettings({ student, showToast, schoolName = 'Riverside College', settings = null }) {
-  const [emailAlerts, setEmailAlerts] = useState(true)
-  const [smsAlerts, setSmsAlerts] = useState(true)
-  const [twoFactor, setTwoFactor] = useState(true)
-
-  const supportEmail = settings?.school_form?.email || settings?.email || 'helpdesk@riverside.edu.ng'
-  const supportPhone = settings?.school_form?.phone || settings?.phone || '+234 1 234 5678'
-  const supportAddress = settings?.school_form?.address || settings?.address || 'ICT Centre, Ground Floor, Senate Building'
-  const website = settings?.school_form?.website || settings?.website || ''
+export function StudentSettings({
+  student,
+  showToast,
+  notificationPolicy = null,
+  securityPolicy = null,
+  schoolName = 'Riverside College',
+  schoolEmail = 'helpdesk@school.edu.ng',
+  schoolPhone = '+234 1 234 5678',
+  schoolAddress = 'ICT Centre, Ground Floor, Senate Building',
+}) {
+  const [emailAlerts, setEmailAlerts] = useState(notificationPolicy?.emailAlerts ?? true)
+  const [smsAlerts, setSmsAlerts] = useState(notificationPolicy?.smsAlerts ?? true)
+  const [twoFactor, setTwoFactor] = useState(securityPolicy?.enforce2FA ?? true)
 
   const handleSaveSecurity = (e) => {
     e.preventDefault()
@@ -122,20 +126,14 @@ export function StudentSettings({ student, showToast, schoolName = 'Riverside Co
             Need Support or Technical Assistance?
           </h3>
           <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 12px 0' }}>
-            {schoolName} ICT & Student Support is available Monday to Friday, 8:00 AM – 5:00 PM.
+            {schoolName} ICT Support is available Monday to Friday, 8:00 AM – 5:00 PM.
           </p>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#0f172a' }}>
-            <div><strong>Email:</strong> {supportEmail}</div>
+            <div><strong>Email:</strong> {schoolEmail}</div>
             <div>&bull;</div>
-            <div><strong>Hotline:</strong> {supportPhone}</div>
+            <div><strong>Hotline:</strong> {schoolPhone}</div>
             <div>&bull;</div>
-            <div><strong>Location:</strong> {supportAddress}</div>
-            {website ? (
-              <>
-                <div>&bull;</div>
-                <div><strong>Portal:</strong> {website}</div>
-              </>
-            ) : null}
+            <div><strong>Location:</strong> {schoolAddress}</div>
           </div>
         </div>
       </div>

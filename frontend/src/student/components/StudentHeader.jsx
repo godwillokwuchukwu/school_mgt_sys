@@ -10,6 +10,7 @@ export function StudentHeader({
   setIsMobileOpen,
   searchQuery,
   setSearchQuery,
+  schoolName = 'Riverside College',
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)

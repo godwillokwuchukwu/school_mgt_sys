@@ -1145,6 +1145,12 @@ class AdminSettingsView(views.APIView):
         data['settings'] = setting_obj.to_dict()
         return Response(data)
 
+    def put(self, request):
+        return self.post(request)
+
+    def patch(self, request):
+        return self.post(request)
+
     def post(self, request):
         data = request.data
         setting_obj = SystemSetting.get_settings()
@@ -1262,25 +1268,43 @@ class AdminSettingsView(views.APIView):
             if 'currentTerm' in academic_form:
                 setting_obj.current_term = academic_form['currentTerm']
             if 'termStart' in academic_form:
-                setting_obj.term_start = academic_form['termStart']
+                setting_obj.term_start = academic_form['termStart'] or None
             if 'termEnd' in academic_form:
-                setting_obj.term_end = academic_form['termEnd']
+                setting_obj.term_end = academic_form['termEnd'] or None
             if 'midtermStart' in academic_form:
-                setting_obj.midterm_start = academic_form['midtermStart']
+                setting_obj.midterm_start = academic_form['midtermStart'] or None
             if 'midtermEnd' in academic_form:
-                setting_obj.midterm_end = academic_form['midtermEnd']
-            if 'minAttendance' in academic_form:
-                setting_obj.min_attendance = int(academic_form['minAttendance'])
-            if 'passMark' in academic_form:
-                setting_obj.pass_mark = int(academic_form['passMark'])
-            if 'ca1Weight' in academic_form:
-                setting_obj.ca1_weight = int(academic_form['ca1Weight'])
-            if 'ca2Weight' in academic_form:
-                setting_obj.ca2_weight = int(academic_form['ca2Weight'])
-            if 'testWeight' in academic_form:
-                setting_obj.test_weight = int(academic_form['testWeight'])
-            if 'examWeight' in academic_form:
-                setting_obj.exam_weight = int(academic_form['examWeight'])
+                setting_obj.midterm_end = academic_form['midtermEnd'] or None
+            if 'minAttendance' in academic_form and academic_form['minAttendance'] != '':
+                try:
+                    setting_obj.min_attendance = int(academic_form['minAttendance'])
+                except (ValueError, TypeError):
+                    pass
+            if 'passMark' in academic_form and academic_form['passMark'] != '':
+                try:
+                    setting_obj.pass_mark = int(academic_form['passMark'])
+                except (ValueError, TypeError):
+                    pass
+            if 'ca1Weight' in academic_form and academic_form['ca1Weight'] != '':
+                try:
+                    setting_obj.ca1_weight = int(academic_form['ca1Weight'])
+                except (ValueError, TypeError):
+                    pass
+            if 'ca2Weight' in academic_form and academic_form['ca2Weight'] != '':
+                try:
+                    setting_obj.ca2_weight = int(academic_form['ca2Weight'])
+                except (ValueError, TypeError):
+                    pass
+            if 'testWeight' in academic_form and academic_form['testWeight'] != '':
+                try:
+                    setting_obj.test_weight = int(academic_form['testWeight'])
+                except (ValueError, TypeError):
+                    pass
+            if 'examWeight' in academic_form and academic_form['examWeight'] != '':
+                try:
+                    setting_obj.exam_weight = int(academic_form['examWeight'])
+                except (ValueError, TypeError):
+                    pass
 
         # 3. Notification Form
         notif_form = data.get('notif_form') or data.get('notifForm')
@@ -1320,6 +1344,10 @@ class AdminSettingsView(views.APIView):
         roles = data.get('roles')
         if roles and isinstance(roles, list):
             setting_obj.roles_config = roles
+
+        backups = data.get('backups')
+        if backups and isinstance(backups, list):
+            setting_obj.backups_history = backups
 
         setting_obj.save()
 

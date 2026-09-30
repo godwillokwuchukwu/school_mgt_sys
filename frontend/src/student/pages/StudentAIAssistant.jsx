@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-export function StudentAIAssistant({ student, showToast }) {
+export function StudentAIAssistant({ student, showToast, schoolName = 'Riverside College' }) {
   const [activeSession, setActiveSession] = useState('Dijkstra Algorithm in Python')
   const [messages, setMessages] = useState([
     {
@@ -87,14 +87,14 @@ def dijkstra(graph, start_vertex):
       {/* Header */}
       <div className="student-page-header">
         <div>
-          <h1 className="student-page-title">Riverside Academic AI Assistant</h1>
+          <h1 className="student-page-title">{schoolName} Academic AI Assistant</h1>
           <p className="student-page-subtitle">
-            Course-grounded AI tutor & research partner for Computer Science & Engineering students.
+            Course-grounded AI tutor & research partner for registered students.
           </p>
         </div>
         <div className="student-page-actions">
           <span className="student-badge student-badge-success" style={{ padding: '6px 12px' }}>
-            Riverside Knowledge Base v2.4 Active
+            {schoolName} Knowledge Base Active
           </span>
         </div>
       </div>

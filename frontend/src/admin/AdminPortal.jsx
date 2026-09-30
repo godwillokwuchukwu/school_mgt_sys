@@ -122,10 +122,12 @@ export default function AdminPortal({ onLogout, profile }) {
     fetchDashboardData()
 
     const handleDataRefresh = () => {
+      if (activeModule === 'Settings') return
       fetchDashboardData(true)
     }
 
     const handleSettingsUpdate = () => {
+      if (activeModule === 'Settings') return
       try {
         const cached = localStorage.getItem('riverside_school_settings')
         if (cached) {
@@ -141,8 +143,11 @@ export default function AdminPortal({ onLogout, profile }) {
     window.addEventListener('admin-activity-occurred', handleDataRefresh)
 
     // Immediate card automation: periodic live background sync every 8 seconds
+    // PAUSE polling while on Settings page so unsaved changes are never clobbered
     const pollInterval = setInterval(() => {
-      fetchDashboardData(true)
+      if (activeModule !== 'Settings') {
+        fetchDashboardData(true)
+      }
     }, 8000)
 
     return () => {
@@ -151,7 +156,7 @@ export default function AdminPortal({ onLogout, profile }) {
       window.removeEventListener('admin-activity-occurred', handleDataRefresh)
       clearInterval(pollInterval)
     }
-  }, [fetchDashboardData])
+  }, [fetchDashboardData, activeModule])
 
   const handleSaveSettings = (newSettings) => {
     setPortalSettings(newSettings)
