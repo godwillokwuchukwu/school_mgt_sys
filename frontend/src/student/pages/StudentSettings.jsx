@@ -1,9 +1,14 @@
 import React, { useState } from 'react'
 
-export function StudentSettings({ student, showToast }) {
+export function StudentSettings({ student, showToast, schoolName = 'Riverside College', settings = null }) {
   const [emailAlerts, setEmailAlerts] = useState(true)
   const [smsAlerts, setSmsAlerts] = useState(true)
   const [twoFactor, setTwoFactor] = useState(true)
+
+  const supportEmail = settings?.school_form?.email || settings?.email || 'helpdesk@riverside.edu.ng'
+  const supportPhone = settings?.school_form?.phone || settings?.phone || '+234 1 234 5678'
+  const supportAddress = settings?.school_form?.address || settings?.address || 'ICT Centre, Ground Floor, Senate Building'
+  const website = settings?.school_form?.website || settings?.website || ''
 
   const handleSaveSecurity = (e) => {
     e.preventDefault()
@@ -117,14 +122,20 @@ export function StudentSettings({ student, showToast }) {
             Need Support or Technical Assistance?
           </h3>
           <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 12px 0' }}>
-            Riverside College ICT Support is available Monday to Friday, 8:00 AM – 5:00 PM.
+            {schoolName} ICT & Student Support is available Monday to Friday, 8:00 AM – 5:00 PM.
           </p>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#0f172a' }}>
-            <div><strong>Email:</strong> helpdesk@riverside.edu.ng</div>
+            <div><strong>Email:</strong> {supportEmail}</div>
             <div>&bull;</div>
-            <div><strong>Hotline:</strong> +234 1 234 5678</div>
+            <div><strong>Hotline:</strong> {supportPhone}</div>
             <div>&bull;</div>
-            <div><strong>Location:</strong> ICT Centre, Ground Floor, Senate Building</div>
+            <div><strong>Location:</strong> {supportAddress}</div>
+            {website ? (
+              <>
+                <div>&bull;</div>
+                <div><strong>Portal:</strong> {website}</div>
+              </>
+            ) : null}
           </div>
         </div>
       </div>

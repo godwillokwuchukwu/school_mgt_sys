@@ -1,6 +1,16 @@
 import React from 'react'
 
-export function StudentSidebar({ activePage, setActivePage, isMobileOpen, setIsMobileOpen, onLogout }) {
+export function StudentSidebar({
+  activePage,
+  setActivePage,
+  isMobileOpen,
+  setIsMobileOpen,
+  onLogout,
+  schoolName = 'Riverside Academy',
+  schoolLogo = null,
+  schoolMotto = 'Knowledge, Character, Excellence',
+  portalLayout = null,
+}) {
   const navItems = [
     {
       id: 'Overview',
@@ -175,10 +185,14 @@ export function StudentSidebar({ activePage, setActivePage, isMobileOpen, setIsM
         {/* Brand Crest & School Name */}
         <div className="student-sidebar-brand">
           <div className="student-brand-crest">
-            <span>R</span>
+            {schoolLogo ? (
+              <img src={schoolLogo} alt={schoolName} className="student-brand-logo-img" />
+            ) : (
+              <span>{schoolName ? schoolName.charAt(0).toUpperCase() : 'R'}</span>
+            )}
           </div>
           <div className="student-brand-text">
-            <span className="student-brand-title">Riverside College</span>
+            <span className="student-brand-title">{schoolName}</span>
             <span className="student-brand-subtitle">Student Portal</span>
           </div>
         </div>
@@ -186,7 +200,15 @@ export function StudentSidebar({ activePage, setActivePage, isMobileOpen, setIsM
         {/* Global Navigation */}
         <div className="student-sidebar-nav">
           <div className="student-nav-heading">Academic Menu</div>
-          {navItems.map((item) => {
+          {navItems
+            .filter((item) => {
+              if (item.id === 'Overview' || item.id === 'Settings') return true
+              const vis = portalLayout?.module_visibility
+              if (!vis) return true
+              const key = item.id.toLowerCase()
+              return vis[key] !== false && vis[item.id] !== false
+            })
+            .map((item) => {
             const isActive =
               activePage === item.id ||
               (item.id === 'Overview' && activePage === 'Dashboard')
@@ -223,7 +245,7 @@ export function StudentSidebar({ activePage, setActivePage, isMobileOpen, setIsM
         {/* Footer */}
         <div className="student-sidebar-footer">
           <div className="student-tagline">
-            Riverside College &bull; Excellence, Integrity & Innovation
+            {schoolName} &bull; {schoolMotto}
           </div>
           <div className="student-sidebar-actions">
             <button

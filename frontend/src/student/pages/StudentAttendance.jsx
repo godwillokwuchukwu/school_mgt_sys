@@ -1,14 +1,25 @@
 import React from 'react'
 
-export function StudentAttendance({ attendanceRecords = [], student }) {
-  const overallRate = student?.attendancePercent !== undefined ? `${student.attendancePercent}%` : '96.0%'
+export function StudentAttendance({
+  attendanceRecords = [],
+  student,
+  minAttendance = 85,
+  settings = null,
+}) {
+  const effectiveMin = settings?.academic_form?.minAttendance ?? minAttendance
+  const currentTerm = settings?.academic_form?.currentTerm || student?.semester || 'First Semester'
+  const currentSession = settings?.academic_form?.currentSession || student?.academicYear || '2025/2026'
+
+  const rawPercent = student?.attendancePercent !== undefined ? student.attendancePercent : 96
+  const overallRate = `${rawPercent}%`
   const sessionsCount = attendanceRecords.length > 0 ? attendanceRecords.length : 46
+  const isEligible = rawPercent >= effectiveMin
 
   const courseAttendance = [
-    { code: 'CRS-101', title: 'Calculus & Analytics', attended: 19, total: 20, rate: 95, status: 'Eligible' },
-    { code: 'CRS-102', title: 'University Physics', attended: 9, total: 10, rate: 90, status: 'Eligible' },
+    { code: 'CRS-101', title: 'Calculus & Analytics', attended: 19, total: 20, rate: 95, status: 95 >= effectiveMin ? 'Eligible' : 'Warning' },
+    { code: 'CRS-102', title: 'University Physics', attended: 9, total: 10, rate: 90, status: 90 >= effectiveMin ? 'Eligible' : 'Warning' },
     { code: 'CRS-103', title: 'Organic Chemistry', attended: 8, total: 8, rate: 100, status: 'Eligible' },
-    { code: 'CRS-104', title: 'Computer Science', attended: 11, total: 12, rate: 92, status: 'Eligible' },
+    { code: 'CRS-104', title: 'Computer Science', attended: 11, total: 12, rate: 92, status: 92 >= effectiveMin ? 'Eligible' : 'Warning' },
   ]
 
   const recentLogs = attendanceRecords.length > 0
@@ -32,12 +43,12 @@ export function StudentAttendance({ attendanceRecords = [], student }) {
         <div>
           <h1 className="student-page-title">Attendance Tracking</h1>
           <p className="student-page-subtitle">
-            First Semester 2026/2027 &bull; Mandatory 75% Examination Attendance Threshold
+            {currentTerm} {currentSession} &bull; Mandatory {effectiveMin}% Examination Attendance Threshold
           </p>
         </div>
         <div className="student-page-actions">
-          <span className="student-badge student-badge-success" style={{ padding: '6px 12px', fontSize: 13 }}>
-            Exam Eligible ({overallRate} Overall)
+          <span className={`student-badge student-badge-${isEligible ? 'success' : 'warning'}`} style={{ padding: '6px 12px', fontSize: 13 }}>
+            {isEligible ? `Exam Eligible (${overallRate} Overall)` : `Attendance Warning (${overallRate})`}
           </span>
         </div>
       </div>

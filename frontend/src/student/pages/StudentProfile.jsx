@@ -1,6 +1,13 @@
 import React, { useState } from 'react'
 
-export function StudentProfile({ student, onUpdateProfile, showToast }) {
+export function StudentProfile({
+  student,
+  onUpdateProfile,
+  showToast,
+  schoolName = 'Riverside Academy',
+  settings = null,
+}) {
+  const currentSession = settings?.academic_form?.currentSession || student?.academicYear || '2025/2026'
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState('personal')
 

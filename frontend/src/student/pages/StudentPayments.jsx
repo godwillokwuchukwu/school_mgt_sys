@@ -1,8 +1,26 @@
 import React from 'react'
 
-export function StudentPayments({ financialData, onOpenMakePayment, showToast }) {
+export function StudentPayments({
+  financialData,
+  onOpenMakePayment,
+  showToast,
+  schoolName = 'Riverside Academy',
+  settings = null,
+  currencySymbol = '$',
+}) {
+  const currentSession = settings?.academic_form?.currentSession || settings?.academic_year || '2025/2026'
+  const currentTerm = settings?.academic_form?.currentTerm || 'First Semester'
+
   const handleDownloadReceipt = (txnId) => {
-    if (showToast) showToast(`Payment receipt for ${txnId} downloaded! (PDF) ✓`)
+    const text = `${schoolName}\nOfficial Tuition & Fee Receipt\nTransaction ID: ${txnId}\nDate: ${new Date().toLocaleDateString()}\nStatus: Verified & Cleared\nAcademic Session: ${currentSession} (${currentTerm})\nOfficial Bursary Standing: Settled ✓`
+    const blob = new Blob([text], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Receipt_${txnId}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+    if (showToast) showToast(`Payment receipt for ${txnId} downloaded! ✓`)
     else alert(`Payment receipt for ${txnId} downloaded!`)
   }
 
@@ -13,7 +31,7 @@ export function StudentPayments({ financialData, onOpenMakePayment, showToast })
         <div>
           <h1 className="student-page-title">Tuition & Fee Payments</h1>
           <p className="student-page-subtitle">
-            First Semester 2025/2026 Academic Session &bull; Bursary Financial Record
+            {currentTerm} {currentSession} Academic Session &bull; Bursary Financial Record
           </p>
         </div>
         <div className="student-page-actions">
@@ -39,9 +57,9 @@ export function StudentPayments({ financialData, onOpenMakePayment, showToast })
               </svg>
             </div>
           </div>
-          <div className="student-kpi-val">{financialData?.totalFeesFormatted || '$2,000.00'}</div>
+          <div className="student-kpi-val">{financialData?.totalFeesFormatted || `${currencySymbol}2,000.00`}</div>
           <div className="student-kpi-meta" style={{ color: '#64748b' }}>
-            Academic Session 2026/2027
+            Academic Session {currentSession}
           </div>
         </div>
 

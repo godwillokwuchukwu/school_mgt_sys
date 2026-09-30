@@ -12,6 +12,10 @@ export function StudentDashboard({
   onOpenSubmitAssignment,
   onOpenMakePayment,
   onOpenUploadDocument,
+  schoolName = 'Riverside Academy',
+  schoolMotto = 'Knowledge, Character, Excellence',
+  settings = null,
+  currencySymbol = '$',
 }) {
   return (
     <div className="student-dashboard-page">
@@ -23,22 +27,22 @@ export function StudentDashboard({
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-            {student?.semester || 'First Semester'} {student?.academicYear || '2026/2027'} &bull; {student?.level || 'Senior Division'}
+            {student?.semester || settings?.academic_form?.currentTerm || 'First Semester'} {student?.academicYear || settings?.academic_form?.currentSession || '2025/2026'} &bull; {student?.level || 'Senior Division'}
           </div>
           <h1 className="student-banner-title">
             Good morning, {student?.firstName || 'Student'}!
           </h1>
           <p className="student-banner-desc">
-            Welcome back to Riverside College. Here’s your academic overview and what’s happening with your studies today.
+            Welcome back to {schoolName}. Here’s your academic overview and what’s happening with your studies today.
           </p>
         </div>
 
-        {/* Motivational quote widget from reference image */}
+        {/* Motivational quote widget from institutional settings */}
         <div className="student-quote-widget">
           <p className="student-quote-text">
-            &ldquo;The beautiful thing about learning is that no one can take it away from you.&rdquo;
+            &ldquo;{schoolMotto}&rdquo;
           </p>
-          <div className="student-quote-author">&mdash; B.B. King</div>
+          <div className="student-quote-author">&mdash; {schoolName} Motto</div>
         </div>
       </div>
 
