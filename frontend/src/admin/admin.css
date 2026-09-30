@@ -298,6 +298,10 @@
   border: 2px solid #ffffff !important;
 }
 
+.admin-profile-wrapper {
+  position: relative !important;
+}
+
 .admin-user-chip {
   display: flex !important;
   align-items: center !important;
@@ -305,11 +309,94 @@
   cursor: pointer !important;
   padding: 4px 8px !important;
   border-radius: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  font-family: inherit !important;
   transition: background 0.15s ease;
 }
 
 .admin-user-chip:hover {
   background: #f1f5f9 !important;
+}
+
+.admin-dropdown-menu {
+  position: absolute !important;
+  right: 0 !important;
+  top: calc(100% + 8px) !important;
+  width: 220px !important;
+  background-color: #ffffff !important;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+  padding: 8px 0 !important;
+  z-index: 100 !important;
+  animation: adminFadeIn 0.15s ease !important;
+}
+
+@keyframes adminFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-dropdown-item {
+  padding: 10px 16px !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  color: #1e293b !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  cursor: pointer !important;
+  border: none !important;
+  background: transparent !important;
+  width: 100% !important;
+  text-align: left !important;
+  transition: all 0.15s ease !important;
+  font-family: inherit !important;
+}
+
+.admin-dropdown-item svg {
+  color: #64748b !important;
+  transition: color 0.15s ease !important;
+  flex-shrink: 0 !important;
+}
+
+.admin-dropdown-item:hover {
+  background-color: #f0fdf4 !important;
+  color: #0f766e !important;
+}
+
+.admin-dropdown-item:hover svg {
+  color: #0f766e !important;
+}
+
+.admin-dropdown-item.admin-dropdown-danger {
+  color: #ef4444 !important;
+}
+
+.admin-dropdown-item.admin-dropdown-danger svg {
+  color: #ef4444 !important;
+}
+
+.admin-dropdown-item.admin-dropdown-danger:hover {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+
+.admin-dropdown-item.admin-dropdown-danger:hover svg {
+  color: #dc2626 !important;
+}
+
+.admin-dropdown-divider {
+  height: 1px !important;
+  background-color: #f1f5f9 !important;
+  margin: 6px 0 !important;
 }
 
 .admin-user-avatar-circle {

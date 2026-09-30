@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import './admin.css'
 import { AdminOverview } from './AdminOverview'
 import { AdminStudents } from './AdminStudents'
@@ -27,7 +27,7 @@ import DataAnalystPortal from '../DataAnalystPortal'
 import { AdminAIAssistant } from './AdminAIAssistant'
 import { useLiveDateTime } from './adminDateUtils'
 
-export default function AdminPortal({ onLogout }) {
+export default function AdminPortal({ onLogout, profile }) {
   const { liveDateTime, longDate } = useLiveDateTime()
   const [activeModule, setActiveModule] = useState('Overview')
   const [dashboardData, setDashboardData] = useState(null)
@@ -48,6 +48,34 @@ export default function AdminPortal({ onLogout }) {
   // Notification state
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(3)
+
+  // Profile dropdown state
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
+  const profileDropdownRef = useRef(null)
+  const notifDropdownRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setIsProfileDropdownOpen(false)
+      }
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const adminName = profile?.first_name 
+    ? `${profile.first_name} ${profile.last_name || ''}`.trim() 
+    : profile?.email || 'Admin'
+  const adminInitials = profile?.first_name
+    ? `${profile.first_name[0]}${profile.last_name ? profile.last_name[0] : ''}`.toUpperCase()
+    : 'AA'
+  const adminRole = profile?.role
+    ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
+    : 'Administrator'
 
   const notificationsList = [
     { id: 1, type: 'red', title: 'Low attendance in JSS 2B', desc: '78% attendance rate (below 85% threshold)', time: '1 hour ago' },
@@ -549,7 +577,7 @@ export default function AdminPortal({ onLogout }) {
             </div>
 
             {/* Bell & Notifications Dropdown */}
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative' }} ref={notifDropdownRef}>
               <button
                 className="admin-bell-btn"
                 aria-label="Notifications"
@@ -610,13 +638,92 @@ export default function AdminPortal({ onLogout }) {
               )}
             </div>
 
-            {/* User Profile */}
-            <div className="admin-user-chip" onClick={onLogout} title="Click to Logout">
-              <div className="admin-user-avatar-circle">AA</div>
-              <div className="admin-user-info">
-                <span className="admin-user-name">Admin</span>
-                <span className="admin-user-role">Administrator</span>
-              </div>
+            {/* User Profile & Dropdown */}
+            <div className="admin-profile-wrapper" ref={profileDropdownRef}>
+              <button
+                type="button"
+                className="admin-user-chip"
+                onClick={() => setIsProfileDropdownOpen((prev) => !prev)}
+                aria-expanded={isProfileDropdownOpen}
+                title="Profile & Settings"
+              >
+                <div className="admin-user-avatar-circle">{adminInitials}</div>
+                <div className="admin-user-info">
+                  <span className="admin-user-name">{adminName}</span>
+                  <span className="admin-user-role">{adminRole}</span>
+                </div>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: 4, color: '#94a3b8' }}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              {isProfileDropdownOpen && (
+                <div className="admin-dropdown-menu">
+                  <button
+                    type="button"
+                    className="admin-dropdown-item"
+                    onClick={() => {
+                      setActiveModule('Settings')
+                      setIsProfileDropdownOpen(false)
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <span>View Profile</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="admin-dropdown-item"
+                    onClick={() => {
+                      setActiveModule('Settings')
+                      setIsProfileDropdownOpen(false)
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    <span>Account Settings</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="admin-dropdown-item"
+                    onClick={() => {
+                      setActiveModule('Settings')
+                      setIsProfileDropdownOpen(false)
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    <span>Help and Support</span>
+                  </button>
+
+                  <div className="admin-dropdown-divider" />
+
+                  <button
+                    type="button"
+                    className="admin-dropdown-item admin-dropdown-danger"
+                    onClick={() => {
+                      setIsProfileDropdownOpen(false)
+                      if (onLogout) onLogout()
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    <span>Log Out</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
