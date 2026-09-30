@@ -149,7 +149,7 @@ class ParentChildSerializer(serializers.ModelSerializer):
         }
 
     def get_average_score(self, obj):
-        scores = list(obj.enrollments.values_list("grades__score", flat=True))
+        scores = [s for s in obj.enrollments.values_list("grades__score", flat=True) if s is not None]
         return round(sum(scores) / len(scores), 1) if scores else None
 
     def get_reports(self, obj):
