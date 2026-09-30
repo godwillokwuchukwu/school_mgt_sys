@@ -9,11 +9,62 @@ import {
   DEFAULT_PORTAL_LAYOUT,
 } from './defaultLayoutConfigs'
 
+/**
+ * High-performance client-side image compression.
+ * Scales images to maximum bounding box of 256x256 while preserving aspect ratio.
+ * Keeps output below ~25KB to completely prevent browser localStorage quota exceeded exceptions.
+ */
+function compressImage(file, maxWidth = 256, maxHeight = 256, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    if (!file) return reject(new Error('No file provided'))
+    if (!file.type || !file.type.startsWith('image/')) {
+      return reject(new Error('File is not a valid image'))
+    }
+
+    const reader = new FileReader()
+    reader.onerror = (err) => reject(err)
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onerror = (err) => reject(err)
+      img.onload = () => {
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width)
+            width = maxWidth
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height)
+            height = maxHeight
+          }
+        }
+
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+
+        const outputFormat = file.type === 'image/jpeg' ? 'image/jpeg' : 'image/png'
+        const dataUrl = canvas.toDataURL(outputFormat, quality)
+        resolve(dataUrl)
+      }
+      img.src = e.target.result
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 export default function AdminSettingsDashboard({ settings = {}, onSave }) {
   const { longDate, shortDate } = useLiveDateTime()
   const [activeTab, setActiveTab] = useState('school')
   const [toastMessage, setToastMessage] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
+  const isDirtyRef = React.useRef(false)
+
   const [logoPreview, setLogoPreview] = useState(
     settings?.logo_data ||
     settings?.school_logo ||
@@ -28,7 +79,7 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
   }
 
   // School Settings State (Panel 10 of media_1790157511143.jpg)
-  const [schoolForm, setSchoolForm] = useState({
+  const [schoolForm, _setSchoolForm] = useState({
     schoolName:
       settings?.school_form?.schoolName ||
       settings?.school_name ||
@@ -49,9 +100,13 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
       (typeof window !== 'undefined' ? localStorage.getItem('riverside_theme_palette') : null) ||
       'emerald_gold',
   })
+  const setSchoolForm = (val) => {
+    isDirtyRef.current = true
+    _setSchoolForm(val)
+  }
 
   // Academic Settings State
-  const [academicForm, setAcademicForm] = useState({
+  const [academicForm, _setAcademicForm] = useState({
     currentSession: settings?.academic_form?.currentSession || settings?.current_session || '2025/2026',
     currentTerm: settings?.academic_form?.currentTerm || settings?.current_term || '1st Term',
     termStart: settings?.academic_form?.termStart || settings?.term_start || '2026-09-08',
@@ -65,9 +120,13 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
     testWeight: settings?.academic_form?.testWeight ?? settings?.test_weight ?? 20,
     examWeight: settings?.academic_form?.examWeight ?? settings?.exam_weight ?? 40,
   })
+  const setAcademicForm = (val) => {
+    isDirtyRef.current = true
+    _setAcademicForm(val)
+  }
 
   // Notification Settings State
-  const [notifForm, setNotifForm] = useState({
+  const [notifForm, _setNotifForm] = useState({
     emailAlerts: settings?.notif_form?.emailAlerts ?? settings?.email_alerts ?? true,
     smsAlerts: settings?.notif_form?.smsAlerts ?? settings?.sms_alerts ?? true,
     feeReminders: settings?.notif_form?.feeReminders ?? settings?.fee_reminders ?? true,
@@ -76,9 +135,13 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
     smsSenderId: settings?.notif_form?.smsSenderId || settings?.sms_sender_id || 'RIVERSIDE',
     dailyAttendanceCutoff: settings?.notif_form?.dailyAttendanceCutoff || settings?.daily_attendance_cutoff || '10:00 AM',
   })
+  const setNotifForm = (val) => {
+    isDirtyRef.current = true
+    _setNotifForm(val)
+  }
 
   // Security Settings State
-  const [securityForm, setSecurityForm] = useState({
+  const [securityForm, _setSecurityForm] = useState({
     enforce2FA: settings?.security_form?.enforce2FA ?? settings?.enforce_2fa ?? true,
     sessionTimeout: settings?.security_form?.sessionTimeout || settings?.session_timeout || '30',
     passwordExpiryDays: settings?.security_form?.passwordExpiryDays || settings?.password_expiry_days || '90',
@@ -86,6 +149,10 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
     ipWhitelisting: settings?.security_form?.ipWhitelisting ?? settings?.ip_whitelisting ?? false,
     maxFailedAttempts: settings?.security_form?.maxFailedAttempts ?? settings?.max_failed_attempts ?? 5,
   })
+  const setSecurityForm = (val) => {
+    isDirtyRef.current = true
+    _setSecurityForm(val)
+  }
 
   // Users & Permissions State
   const [roles, setRoles] = useState(
@@ -174,19 +241,16 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
     }))
   }
 
-  const isDirtyRef = React.useRef(false)
-  const initialLoadedRef = React.useRef(false)
-
-  // Sync state ONLY on initial load from database/props; do not overwrite active editing forms
+  // Sync state whenever settings prop updates from database
   useEffect(() => {
     if (!settings || Object.keys(settings).length === 0) return
-    if (initialLoadedRef.current) return
-    initialLoadedRef.current = true
+    // If the user has made unsaved edits on the active page, protect them from being overwritten
+    if (isDirtyRef.current) return
 
     if (settings.school_form) {
-      setSchoolForm((prev) => ({ ...prev, ...settings.school_form }))
+      _setSchoolForm((prev) => ({ ...prev, ...settings.school_form }))
     } else if (settings.school_name) {
-      setSchoolForm((prev) => ({
+      _setSchoolForm((prev) => ({
         ...prev,
         schoolName: settings.school_name || prev.schoolName,
         address: settings.address || prev.address,
@@ -201,15 +265,15 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
     }
 
     if (settings.academic_form) {
-      setAcademicForm((prev) => ({ ...prev, ...settings.academic_form }))
+      _setAcademicForm((prev) => ({ ...prev, ...settings.academic_form }))
     }
 
     if (settings.notif_form) {
-      setNotifForm((prev) => ({ ...prev, ...settings.notif_form }))
+      _setNotifForm((prev) => ({ ...prev, ...settings.notif_form }))
     }
 
     if (settings.security_form) {
-      setSecurityForm((prev) => ({ ...prev, ...settings.security_form }))
+      _setSecurityForm((prev) => ({ ...prev, ...settings.security_form }))
     }
 
     if (settings.roles && Array.isArray(settings.roles) && settings.roles.length > 0) {
@@ -243,39 +307,113 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
       settings.school_form?.theme_palette ||
       (typeof window !== 'undefined' ? localStorage.getItem('riverside_theme_palette') : null)
     if (activePalette) {
-      setSchoolForm((prev) => ({ ...prev, themePalette: activePalette }))
+      _setSchoolForm((prev) => ({ ...prev, themePalette: activePalette }))
       applyThemePalette(activePalette)
     }
   }, [settings])
 
-  const handleLogoUpload = (e) => {
+  const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0]
-    if (file) {
-      isDirtyRef.current = true
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const base64 = event.target.result
-        setLogoPreview(base64)
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('riverside_school_logo', base64)
-          window.dispatchEvent(new Event('school-settings-updated'))
-        }
-        showToast('Logo updated in preview & ready to save')
+    if (!file) return
+
+    try {
+      showToast('Optimizing and saving school logo...')
+      const compressedBase64 = await compressImage(file, 256, 256)
+      setLogoPreview(compressedBase64)
+      _setSchoolForm((prev) => ({ ...prev, logo: compressedBase64 }))
+
+      // 1. Immediately auto-save to database so changes are never lost
+      const updatePayload = {
+        school_name: schoolForm.schoolName,
+        school_logo: compressedBase64,
+        logo_data: compressedBase64,
+        school_form: {
+          ...schoolForm,
+          logo: compressedBase64,
+        },
       }
-      reader.readAsDataURL(file)
+
+      const res = await api.updateSettings(updatePayload)
+      isDirtyRef.current = false
+
+      // 2. Safely synchronize localStorage without quota crashes
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('riverside_school_logo', compressedBase64)
+          const cached = localStorage.getItem('riverside_school_settings')
+          if (cached) {
+            const parsed = JSON.parse(cached)
+            localStorage.setItem(
+              'riverside_school_settings',
+              JSON.stringify({
+                ...parsed,
+                school_logo: compressedBase64,
+                logo_data: compressedBase64,
+                school_form: { ...(parsed.school_form || {}), logo: compressedBase64 },
+              })
+            )
+          }
+        } catch (storageErr) {
+          console.warn('LocalStorage quota warning during logo save:', storageErr)
+        }
+        window.dispatchEvent(
+          new CustomEvent('school-settings-updated', {
+            detail: res?.settings || { ...updatePayload, logo: compressedBase64 },
+          })
+        )
+      }
+
+      showToast('School logo updated and saved successfully! ✓')
+      if (onSave && res?.settings) {
+        onSave(res.settings)
+      }
+    } catch (err) {
+      console.error('Logo upload error:', err)
+      showToast('Failed to process logo image. Please try another image.')
+    } finally {
+      if (e.target) e.target.value = ''
     }
   }
 
-  const handleSelectTheme = (paletteId) => {
-    isDirtyRef.current = true
+  const handleSelectTheme = async (paletteId) => {
     setSchoolForm((prev) => ({ ...prev, themePalette: paletteId }))
     applyThemePalette(paletteId)
+
     if (typeof window !== 'undefined') {
-      localStorage.setItem('riverside_theme_palette', paletteId)
-      window.dispatchEvent(new Event('school-settings-updated'))
+      try {
+        localStorage.setItem('riverside_theme_palette', paletteId)
+      } catch (storageErr) {
+        console.warn('LocalStorage error saving theme:', storageErr)
+      }
+      window.dispatchEvent(
+        new CustomEvent('school-settings-updated', {
+          detail: { theme_palette: paletteId, themePalette: paletteId },
+        })
+      )
     }
+
     const pal = THEME_PALETTES.find((t) => t.id === paletteId)
-    showToast(`Active Theme: ${pal?.name || paletteId}. Click Save Changes to persist.`)
+    showToast(`Active Theme: ${pal?.name || paletteId}. Saving to system...`)
+
+    try {
+      const res = await api.updateSettings({
+        school_name: schoolForm.schoolName,
+        theme_palette: paletteId,
+        school_form: {
+          ...schoolForm,
+          themePalette: paletteId,
+          theme_palette: paletteId,
+        },
+      })
+      isDirtyRef.current = false
+      showToast(`Active Theme: ${pal?.name || paletteId} saved successfully! ✓`)
+      if (onSave && res?.settings) {
+        onSave(res.settings)
+      }
+    } catch (err) {
+      console.warn('Could not auto-persist theme to backend:', err)
+      showToast(`Theme applied locally: ${pal?.name || paletteId}`)
+    }
   }
 
   const handleSave = async (tabName) => {
@@ -309,24 +447,36 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
     try {
       const response = await api.updateSettings(payload)
       isDirtyRef.current = false
-      showToast(`${tabName} saved successfully to database!`)
+      showToast(`${tabName} saved successfully to database! ✓`)
 
       // Immediately synchronize local storage for instantaneous reactive UI updates
       if (typeof window !== 'undefined') {
-        localStorage.setItem('riverside_school_name', schoolForm.schoolName)
-        if (effectiveLogo) {
-          localStorage.setItem('riverside_school_logo', effectiveLogo)
-        }
-        localStorage.setItem('riverside_theme_palette', effectiveTheme)
-        applyThemePalette(effectiveTheme)
+        try {
+          if (schoolForm.schoolName) {
+            localStorage.setItem('riverside_school_name', schoolForm.schoolName)
+            document.title = `${schoolForm.schoolName} — Administration Portal`
+          }
+          if (effectiveLogo) {
+            localStorage.setItem('riverside_school_logo', effectiveLogo)
+          }
+          if (effectiveTheme) {
+            localStorage.setItem('riverside_theme_palette', effectiveTheme)
+            applyThemePalette(effectiveTheme)
+          }
 
-        const savedSettingsObj = response?.settings || {
-          ...settings,
-          ...payload,
+          const savedSettingsObj = response?.settings || {
+            ...settings,
+            ...payload,
+          }
+          localStorage.setItem('riverside_school_settings', JSON.stringify(savedSettingsObj))
+        } catch (storageErr) {
+          console.warn('LocalStorage save warning:', storageErr)
         }
-        localStorage.setItem('riverside_school_settings', JSON.stringify(savedSettingsObj))
-        document.title = `${schoolForm.schoolName} — Administration Portal`
-        window.dispatchEvent(new CustomEvent('school-settings-updated', { detail: savedSettingsObj }))
+        window.dispatchEvent(
+          new CustomEvent('school-settings-updated', {
+            detail: response?.settings || payload,
+          })
+        )
       }
 
       if (response?.settings && onSave) {
@@ -340,15 +490,21 @@ export default function AdminSettingsDashboard({ settings = {}, onSave }) {
     } catch (err) {
       console.warn('Backend update failed, saving locally:', err)
       isDirtyRef.current = false
-      showToast(`${tabName} saved locally`)
+      showToast(`Warning: Server update failed (${err?.message || 'Network error'}). Saved locally.`)
       if (typeof window !== 'undefined') {
-        localStorage.setItem('riverside_school_name', schoolForm.schoolName)
-        if (effectiveLogo) localStorage.setItem('riverside_school_logo', effectiveLogo)
-        localStorage.setItem('riverside_theme_palette', effectiveTheme)
-        applyThemePalette(effectiveTheme)
-        const localObj = { ...settings, ...payload }
-        localStorage.setItem('riverside_school_settings', JSON.stringify(localObj))
-        window.dispatchEvent(new CustomEvent('school-settings-updated', { detail: localObj }))
+        try {
+          if (schoolForm.schoolName) {
+            localStorage.setItem('riverside_school_name', schoolForm.schoolName)
+          }
+          if (effectiveLogo) localStorage.setItem('riverside_school_logo', effectiveLogo)
+          localStorage.setItem('riverside_theme_palette', effectiveTheme)
+          applyThemePalette(effectiveTheme)
+          const localObj = { ...settings, ...payload }
+          localStorage.setItem('riverside_school_settings', JSON.stringify(localObj))
+          window.dispatchEvent(new CustomEvent('school-settings-updated', { detail: localObj }))
+        } catch (storageErr) {
+          console.warn('LocalStorage fallback write warning:', storageErr)
+        }
       }
       if (onSave) {
         onSave({

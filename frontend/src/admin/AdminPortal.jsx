@@ -172,7 +172,7 @@ export default function AdminPortal({ onLogout, profile }) {
       if (sLogo) {
         localStorage.setItem('riverside_school_logo', sLogo)
       }
-      window.dispatchEvent(new Event('school-settings-updated'))
+      window.dispatchEvent(new CustomEvent('school-settings-updated', { detail: newSettings }))
     } catch {}
   }
 
