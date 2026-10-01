@@ -17,6 +17,7 @@ import NotFound from './pages/NotFound'
 import ParentRegister from './pages/ParentRegister'
 import Privacy from './pages/Privacy'
 import Programs from './pages/Programs'
+import ParentWorkspace from '../ParentWorkspace'
 import StudentAuth from './pages/StudentAuth'
 import Terms from './pages/Terms'
 
@@ -31,11 +32,13 @@ export default function PublicApp() {
       <Route path="student/register" element={<StudentAuth />} />
 
       {/* Standalone direct parent portal routes */}
-      <Route path="parent" element={<Navigate to="/portal?role=parent" replace />} />
-      <Route path="parents" element={<Navigate to="/portal?role=parent" replace />} />
-      <Route path="parent/portal" element={<Navigate to="/portal?role=parent" replace />} />
-      <Route path="parent/login" element={<Navigate to="/portal?role=parent" replace />} />
-      <Route path="parents/login" element={<Navigate to="/portal?role=parent" replace />} />
+      <Route path="parent" element={<ParentWorkspace />} />
+      <Route path="parent/*" element={<ParentWorkspace />} />
+      <Route path="parents" element={<ParentWorkspace />} />
+      <Route path="parents/*" element={<ParentWorkspace />} />
+      <Route path="parent/portal" element={<ParentWorkspace />} />
+      <Route path="parent/login" element={<ParentWorkspace />} />
+      <Route path="parents/login" element={<ParentWorkspace />} />
 
       <Route element={<PublicLayout />}>
         <Route index element={<Home />} />

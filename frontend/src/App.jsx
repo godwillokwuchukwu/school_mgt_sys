@@ -296,6 +296,26 @@ function App() {
     if (loggedIn) document.title = `${timeGreeting()}, ${userName(profile)} · ${schoolBrandName}`
   }, [loggedIn, profile, schoolBrandName])
 
+  const urlRole = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('role') : null
+  const sessionRole = typeof window !== 'undefined' ? sessionStorage.getItem('active_view_role') : null
+  const effectiveRole = (urlRole || sessionRole || role || profile?.role || 'student').toLowerCase()
+  const isStudent = effectiveRole === 'student'
+  const isTeacher = effectiveRole === 'teacher'
+  const isParent = effectiveRole === 'parent'
+  const isAdmin = effectiveRole === 'admin'
+
+  // Dedicated unblocked access to Parent Portal: renders full institutional design immediately
+  if (isParent) {
+    return (
+      <ParentPortal
+        data={data}
+        profile={profile}
+        onLogout={handleLogout}
+        onSwitchRole={handleSwitchRole}
+      />
+    )
+  }
+
   if (!loggedIn) {
     const params = new URLSearchParams(window.location.search)
     const token = params.get('activate_token')
@@ -330,28 +350,9 @@ function App() {
     )
   }
 
-  const urlRole = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('role') : null
-  const sessionRole = typeof window !== 'undefined' ? sessionStorage.getItem('active_view_role') : null
-  const effectiveRole = (urlRole || sessionRole || role || profile?.role || 'student').toLowerCase()
-  const isStudent = effectiveRole === 'student'
-  const isTeacher = effectiveRole === 'teacher'
-  const isParent = effectiveRole === 'parent'
-  const isAdmin = effectiveRole === 'admin'
-
   if (isAdmin) {
     return (
       <AdminPortal
-        data={data}
-        profile={profile}
-        onLogout={handleLogout}
-        onSwitchRole={handleSwitchRole}
-      />
-    )
-  }
-
-  if (isParent) {
-    return (
-      <ParentPortal
         data={data}
         profile={profile}
         onLogout={handleLogout}
