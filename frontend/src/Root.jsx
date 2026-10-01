@@ -7,6 +7,12 @@ export default function Root() {
     <BrowserRouter>
       <Routes>
         <Route path="/student/*" element={<Navigate to="/portal" replace />} />
+        <Route path="/parent" element={<Navigate to="/portal?role=parent" replace />} />
+        <Route path="/parent/*" element={<Navigate to="/portal?role=parent" replace />} />
+        <Route path="/parents" element={<Navigate to="/portal?role=parent" replace />} />
+        <Route path="/parents/*" element={<Navigate to="/portal?role=parent" replace />} />
+        <Route path="/parent-portal" element={<Navigate to="/portal?role=parent" replace />} />
+        <Route path="/parent-portal/*" element={<Navigate to="/portal?role=parent" replace />} />
         <Route path="/portal/*" element={<App />} />
         <Route path="/*" element={<PublicApp />} />
       </Routes>

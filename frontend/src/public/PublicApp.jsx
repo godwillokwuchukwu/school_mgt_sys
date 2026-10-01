@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, Navigate } from 'react-router-dom'
 import PublicLayout from './Layout'
 import About from './pages/About'
 import Academics from './pages/Academics'
@@ -30,6 +30,13 @@ export default function PublicApp() {
       <Route path="student/login" element={<StudentAuth />} />
       <Route path="student/register" element={<StudentAuth />} />
 
+      {/* Standalone direct parent portal routes */}
+      <Route path="parent" element={<Navigate to="/portal?role=parent" replace />} />
+      <Route path="parents" element={<Navigate to="/portal?role=parent" replace />} />
+      <Route path="parent/portal" element={<Navigate to="/portal?role=parent" replace />} />
+      <Route path="parent/login" element={<Navigate to="/portal?role=parent" replace />} />
+      <Route path="parents/login" element={<Navigate to="/portal?role=parent" replace />} />
+
       <Route element={<PublicLayout />}>
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />
@@ -43,7 +50,6 @@ export default function PublicApp() {
         <Route path="register/parent" element={<ParentRegister />} />
         <Route path="parent/register" element={<ParentRegister />} />
         <Route path="parents/register" element={<ParentRegister />} />
-        <Route path="parent/login" element={<ParentRegister />} />
         <Route path="careers" element={<Careers />} />
         <Route path="news" element={<News />} />
         <Route path="news/:slug" element={<NewsDetail />} />

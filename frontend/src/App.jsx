@@ -5,6 +5,7 @@ import ActivateFlow from './ActivateFlow'
 import AdmissionsAdmin from './AdmissionsAdmin'
 import UserManagement from './UserManagement'
 import ParentWorkspace from './ParentWorkspace'
+import ParentPortal from './parent/ParentPortal'
 import DataAnalystPortal from './DataAnalystPortal'
 import AdminPortal from './admin/AdminPortal'
 import NewStudentPortal from './student/StudentPortal'
@@ -191,7 +192,10 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(api.isAuthenticated())
   const [role, setRole] = useState(() => {
     try {
-      return localStorage.getItem('bfa_user_role') || 'student'
+      const urlParams = new URLSearchParams(window.location.search)
+      const roleParam = urlParams.get('role')
+      if (roleParam) return roleParam.toLowerCase()
+      return sessionStorage.getItem('active_view_role') || localStorage.getItem('bfa_user_role') || 'student'
     } catch {
       return 'student'
     }
@@ -213,6 +217,7 @@ function App() {
   const handleLogout = () => {
     api.logout()
     try {
+      sessionStorage.removeItem('active_view_role')
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('applicant_access_token')
@@ -225,6 +230,18 @@ function App() {
     setRole(null)
     setProfile(null)
     setData(demo)
+  }
+
+  const handleSwitchRole = (newRole) => {
+    const targetRole = (newRole || '').toLowerCase()
+    setRole(targetRole)
+    try {
+      sessionStorage.setItem('active_view_role', targetRole)
+      localStorage.setItem('bfa_user_role', targetRole)
+      const url = new URL(window.location.href)
+      url.searchParams.set('role', targetRole)
+      window.history.replaceState({}, '', url.toString())
+    } catch {}
   }
 
   // Sync school branding dynamically with settings changes and public school endpoint
@@ -262,7 +279,11 @@ function App() {
       .then((dashboard) => {
         setProfile(dashboard.profile)
         const userRole = dashboard.profile?.role || 'student'
-        setRole(userRole)
+        const urlParams = new URLSearchParams(window.location.search)
+        const roleParam = urlParams.get('role')
+        const sessionRole = sessionStorage.getItem('active_view_role')
+        const activeRole = (roleParam || sessionRole || userRole).toLowerCase()
+        setRole(activeRole)
         try {
           localStorage.setItem('bfa_user_role', userRole)
         } catch {}
@@ -295,8 +316,12 @@ function App() {
         initialMode={authMode}
         onAuthenticated={(session) => {
           const userRole = session.role || 'student'
-          setRole(userRole)
+          const urlParams = new URLSearchParams(window.location.search)
+          const roleParam = urlParams.get('role')
+          const targetRole = (roleParam || userRole).toLowerCase()
+          setRole(targetRole)
           try {
+            sessionStorage.setItem('active_view_role', targetRole)
             localStorage.setItem('bfa_user_role', userRole)
           } catch {}
           setLoggedIn(true)
@@ -305,7 +330,9 @@ function App() {
     )
   }
 
-  const effectiveRole = profile?.role || role || 'student'
+  const urlRole = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('role') : null
+  const sessionRole = typeof window !== 'undefined' ? sessionStorage.getItem('active_view_role') : null
+  const effectiveRole = (urlRole || sessionRole || role || profile?.role || 'student').toLowerCase()
   const isStudent = effectiveRole === 'student'
   const isTeacher = effectiveRole === 'teacher'
   const isParent = effectiveRole === 'parent'
@@ -317,12 +344,18 @@ function App() {
         data={data}
         profile={profile}
         onLogout={handleLogout}
-        onSwitchRole={(newRole) => {
-          if (profile?.role === 'admin') {
-            setRole(newRole)
-            try { localStorage.setItem('bfa_user_role', newRole) } catch {}
-          }
-        }}
+        onSwitchRole={handleSwitchRole}
+      />
+    )
+  }
+
+  if (isParent) {
+    return (
+      <ParentPortal
+        data={data}
+        profile={profile}
+        onLogout={handleLogout}
+        onSwitchRole={handleSwitchRole}
       />
     )
   }
@@ -333,6 +366,7 @@ function App() {
         data={data}
         profile={profile}
         onLogout={handleLogout}
+        onSwitchRole={handleSwitchRole}
       />
     )
   }

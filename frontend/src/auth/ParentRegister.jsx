@@ -58,7 +58,11 @@ function ApplicantAuthInline({ onSignedIn }) {
     setLoginLoading(true)
     try {
       await publicApi.login(loginEmail, loginPassword)
-      onSignedIn()
+      try {
+        sessionStorage.setItem('active_view_role', 'parent')
+        localStorage.setItem('bfa_user_role', 'parent')
+      } catch {}
+      window.location.href = '/portal?role=parent'
     } catch (err) {
       setLoginError(err.message || 'Authentication failed. Please check your credentials.')
     } finally {
@@ -466,6 +470,27 @@ export default function ParentRegister() {
         title="Connect with your child's record"
         detail="Identify the student you're the parent or guardian of. An administrator verifies this before any portal access is granted — it's never automatic."
       />
+      <div style={{ maxWidth: 1100, margin: '20px auto 0', padding: '0 24px' }}>
+        <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 8, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <strong style={{ color: '#065f46', fontSize: 15 }}>Parent Account Signed In</strong>
+            <p style={{ margin: '4px 0 0', color: '#047857', fontSize: 13 }}>You are signed in to Riverside Academy. You can access your full Parent Portal dashboard now.</p>
+          </div>
+          <button
+            type="button"
+            className="bfa-btn bfa-btn-gold"
+            onClick={() => {
+              try {
+                sessionStorage.setItem('active_view_role', 'parent')
+                localStorage.setItem('bfa_user_role', 'parent')
+              } catch {}
+              window.location.href = '/portal?role=parent'
+            }}
+          >
+            Launch Parent Portal ↗
+          </button>
+        </div>
+      </div>
       <section className="bfa-section">
         <div className="bfa-container">
           <div className="bfa-grid bfa-grid-2">

@@ -161,6 +161,40 @@ export function ParentHeader({
                 <span>Fee Payments</span>
               </button>
 
+              {onSwitchRole && (
+                <>
+                  <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
+                  <button
+                    type="button"
+                    className="parent-dropdown-item"
+                    onClick={() => {
+                      setIsUserMenuOpen(false)
+                      onSwitchRole('admin')
+                    }}
+                  >
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>Switch to Admin Portal</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="parent-dropdown-item"
+                    onClick={() => {
+                      setIsUserMenuOpen(false)
+                      onSwitchRole('student')
+                    }}
+                  >
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    </svg>
+                    <span>Switch to Student Portal</span>
+                  </button>
+                </>
+              )}
+
               <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
 
               <button

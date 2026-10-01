@@ -66,6 +66,8 @@ function Header({ school }) {
           <span>
             <Link to="/admissions/apply" className="bfa-utility-highlight">Admissions Portal</Link>
             &nbsp;·&nbsp;
+            <Link to="/parent" className="bfa-utility-highlight">Parent Portal</Link>
+            &nbsp;·&nbsp;
             <Link to="/login" className="bfa-utility-highlight">Student Portal</Link>
             &nbsp;·&nbsp;
             <Link to="/admissions/status">Track application</Link>
@@ -150,6 +152,7 @@ function Footer({ school }) {
             <Link to="/academics">Academics</Link>
             <Link to="/admissions">Admissions</Link>
             <Link to="/admissions/apply" style={{ color: 'var(--bfa-gold-light)', fontWeight: 600 }}>Admissions Portal</Link>
+            <Link to="/parent">Parent Portal</Link>
             <Link to="/careers">Careers</Link>
           </div>
           <div>

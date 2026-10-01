@@ -133,9 +133,24 @@ export function AdminParents({ parents: initialParents = [], onSelectParent, onM
           <h1 className="admin-page-title">Parents</h1>
           <p className="admin-page-subtitle">Manage parent/guardian records and track their children's progress.</p>
         </div>
-        <button className="admin-btn admin-btn-primary" onClick={() => setIsAddModalOpen(true)}>
-          Add Parent
-        </button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button
+            type="button"
+            className="admin-btn admin-btn-secondary"
+            onClick={() => {
+              try {
+                sessionStorage.setItem('active_view_role', 'parent')
+              } catch {}
+              window.location.href = '/portal?role=parent'
+            }}
+            title="Open Parent Portal"
+          >
+            Launch Parent Portal ↗
+          </button>
+          <button className="admin-btn admin-btn-primary" onClick={() => setIsAddModalOpen(true)}>
+            Add Parent
+          </button>
+        </div>
       </div>
 
       {/* 2. 4 Live KPI Cards */}

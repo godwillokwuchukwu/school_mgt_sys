@@ -82,9 +82,80 @@ export default function ParentPortal({
     return DEFAULT_PARENT_PROFILE
   })
 
-  // Children state
-  const [childrenList, setChildrenList] = useState(DEFAULT_CHILDREN)
-  const [selectedChildId, setSelectedChildId] = useState(DEFAULT_CHILDREN[0]?.id || 'child-1')
+  // Children state: initialize from real database children if available, else DEFAULT_CHILDREN
+  const [childrenList, setChildrenList] = useState(() => {
+    if (data?.children && data.children.length > 0) {
+      return data.children.map((child, idx) => {
+        const defaultSample = DEFAULT_CHILDREN[idx % DEFAULT_CHILDREN.length] || DEFAULT_CHILDREN[0]
+        const firstName = child.full_name ? child.full_name.split(' ')[0] : 'Student'
+        const lastName = child.full_name ? child.full_name.split(' ').slice(1).join(' ') : ''
+        return {
+          ...defaultSample,
+          ...child,
+          id: String(child.id),
+          studentId: child.admission_number || defaultSample.studentId,
+          firstName,
+          lastName,
+          name: child.full_name || defaultSample.name,
+          attendanceRate: child.attendance?.percentage != null ? child.attendance.percentage : defaultSample.attendanceRate,
+          averageScore: child.average_score != null ? child.average_score : defaultSample.averageScore,
+          daysPresent: child.attendance?.present != null ? child.attendance.present : defaultSample.daysPresent,
+        }
+      })
+    }
+    return DEFAULT_CHILDREN
+  })
+
+  const [selectedChildId, setSelectedChildId] = useState(() => {
+    if (data?.children && data.children.length > 0) {
+      return String(data.children[0].id)
+    }
+    return DEFAULT_CHILDREN[0]?.id || 'child-1'
+  })
+
+  // Synchronize when data.children or profile loads asynchronously from API
+  useEffect(() => {
+    if (data?.children && data.children.length > 0) {
+      setChildrenList((prev) => {
+        const isDefault = prev.length === DEFAULT_CHILDREN.length && prev[0]?.id === DEFAULT_CHILDREN[0]?.id
+        if (isDefault || prev.length === 0) {
+          const mapped = data.children.map((child, idx) => {
+            const defaultSample = DEFAULT_CHILDREN[idx % DEFAULT_CHILDREN.length] || DEFAULT_CHILDREN[0]
+            const firstName = child.full_name ? child.full_name.split(' ')[0] : 'Student'
+            const lastName = child.full_name ? child.full_name.split(' ').slice(1).join(' ') : ''
+            return {
+              ...defaultSample,
+              ...child,
+              id: String(child.id),
+              studentId: child.admission_number || defaultSample.studentId,
+              firstName,
+              lastName,
+              name: child.full_name || defaultSample.name,
+              attendanceRate: child.attendance?.percentage != null ? child.attendance.percentage : defaultSample.attendanceRate,
+              averageScore: child.average_score != null ? child.average_score : defaultSample.averageScore,
+              daysPresent: child.attendance?.present != null ? child.attendance.present : defaultSample.daysPresent,
+            }
+          })
+          setSelectedChildId(String(mapped[0]?.id))
+          return mapped
+        }
+        return prev
+      })
+    }
+  }, [data?.children])
+
+  useEffect(() => {
+    if (profile) {
+      setParentProfile((prev) => ({
+        ...prev,
+        ...profile,
+        fullName: profile.full_name || profile.name || prev.fullName,
+        displayName: profile.display_name || profile.name || prev.displayName,
+        email: profile.email || prev.email,
+        phone: profile.phone || prev.phone,
+      }))
+    }
+  }, [profile])
 
   // Messages, Notices, Events state
   const [messagesList, setMessagesList] = useState(RECENT_MESSAGES)

@@ -23,7 +23,7 @@ import { StudentSettings } from './pages/StudentSettings'
 
 import { api } from '../api'
 
-export default function StudentPortal({ onLogout, profile, data = {} }) {
+export default function StudentPortal({ onLogout, profile, data = {}, onSwitchRole }) {
   const [activePage, setActivePage] = useState('Overview')
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -538,6 +538,7 @@ export default function StudentPortal({ onLogout, profile, data = {} }) {
           student={student}
           notifications={notifications}
           onLogout={onLogout}
+          onSwitchRole={onSwitchRole}
           isMobileOpen={isMobileOpen}
           setIsMobileOpen={setIsMobileOpen}
           searchQuery={searchQuery}
