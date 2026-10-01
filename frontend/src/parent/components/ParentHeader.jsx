@@ -129,8 +129,13 @@ export function ParentHeader({
           {isUserMenuOpen && (
             <div className="parent-dropdown-menu">
               <div style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', marginBottom: 4 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{parentProfile?.fullName || 'Mrs. Sarah Johnson'}</div>
-                <div style={{ fontSize: 11.5, color: '#64748b' }}>{parentProfile?.email || 'mrs.johnson@parent.riversideacademy.com'}</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{parentProfile?.fullName || 'Mrs. Sarah Johnson'}</div>
+                  <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: parentProfile?.email && !parentProfile.email.includes('mrs.johnson') ? '#dcfce7' : '#f1f5f9', color: parentProfile?.email && !parentProfile.email.includes('mrs.johnson') ? '#166534' : '#475569', fontWeight: 700, flexShrink: 0 }}>
+                    {parentProfile?.email && !parentProfile.email.includes('mrs.johnson') ? '● Live DB' : '● Demo View'}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>{parentProfile?.email || 'mrs.johnson@parent.riversideacademy.com'}</div>
               </div>
 
               <button
